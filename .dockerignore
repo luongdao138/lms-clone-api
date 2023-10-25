@@ -1,0 +1,9 @@
+.dockerignore
+docker-compose*
+Dockerfile
+dist/
+node_modules
+.env
+.gitignore
+.prettierignore
+.eslintrc.js

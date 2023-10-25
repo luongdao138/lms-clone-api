@@ -1,0 +1,72 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.1
+    ports:
+      - '3306:3306'
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=luongdao
+      - MYSQL_DATABASE=lms-clone
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - lms
+    restart: unless-stopped
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=luongdao
+      timeout: 45s
+      interval: 10s
+      retries: 10
+
+  redis:
+    image: redis:7.2
+    ports:
+      - '6380:6379'
+    restart: unless-stopped
+    volumes:
+      - redis:/data
+    networks:
+      - lms
+
+  migrate:
+    build:
+      context: .
+      args:
+        - NPM_LOG_LEVEL=notice
+      target: development
+    command: bash -c "yarn db:init"
+    environment:
+      - DATABASE_URL=mysql://root:luongdao@db:3306/lms-clone
+    networks:
+      - lms
+    depends_on:
+      db:
+        condition: service_healthy
+
+  server:
+    build:
+      context: .
+      args:
+        - NPM_LOG_LEVEL=notice
+      target: development
+    ports:
+      - 2960:2960
+    environment:
+      - DATABASE_URL=mysql://root:luongdao@db:3306/lms-clone
+    depends_on:
+      - migrate
+      - redis
+    networks:
+      - lms
+    restart: unless-stopped
+    volumes:
+      - ./:/app/
+      - /app/node_modules
+
+networks:
+  lms:
+    driver: bridge
+volumes:
+  mysql:
+  redis:
