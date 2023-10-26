@@ -7,6 +7,20 @@
         "parameters": [],
         "responses": { "200": { "description": "" } }
       }
+    },
+    "/api/health/live": {
+      "get": {
+        "operationId": "HealthController_healthLive",
+        "parameters": [],
+        "responses": { "200": { "description": "" } }
+      }
+    },
+    "/api/health/ready": {
+      "get": {
+        "operationId": "HealthController_healthReady",
+        "parameters": [],
+        "responses": { "200": { "description": "" } }
+      }
     }
   },
   "info": {
