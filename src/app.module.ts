@@ -8,7 +8,10 @@ import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', '.env.local'],
+    }),
     ServeStaticModule.forRootAsync({
       useClass: ServeStaticOptionsService,
     }),
