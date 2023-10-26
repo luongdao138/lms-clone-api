@@ -54,6 +54,7 @@ services:
       - 2960:2960
     environment:
       - DATABASE_URL=mysql://root:luongdao@db:3306/lms-clone
+      - ENABLE_SHUTDOWN_HOOKS=true
     depends_on:
       - migrate
       - redis

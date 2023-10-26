@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
@@ -18,4 +18,10 @@ import { PrismaModule } from './prisma/prisma.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements OnApplicationShutdown {
+  onApplicationShutdown(signal: string) {
+    new Logger(AppModule.name).debug(
+      `Application shutdown (signal: ${signal})`,
+    );
+  }
+}
