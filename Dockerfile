@@ -14,7 +14,7 @@ RUN yarn
 
 COPY . .
 
-CMD [ "yarn", "start:dev"]
+CMD [ "bash", "-c",  "yarn db:init && yarn start:dev"]
 
 # For building dist
 FROM node:18.13.0-slim AS build
@@ -27,7 +27,7 @@ WORKDIR /app
 
 COPY ./package.json yarn.lock ./
 
-RUN yarn
+RUN yarn 
 
 COPY . .
 
@@ -54,6 +54,8 @@ COPY --from=build ./app/dist ./
 
 RUN apt-get update -y \
     && apt-get install -y openssl
+
+RUN yarn db:generate
 
 # change ownership of the workspace directory
 RUN groupadd --gid ${gid} ${user} \

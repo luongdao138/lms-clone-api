@@ -5,8 +5,7 @@
       "get": {
         "operationId": "AppController_getHello",
         "parameters": [],
-        "responses": { "200": { "description": "" } },
-        "tags": ["App"]
+        "responses": { "200": { "description": "" } }
       }
     }
   },
