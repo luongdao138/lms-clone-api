@@ -1,13 +1,6 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/api": {
-      "get": {
-        "operationId": "AppController_getHello",
-        "parameters": [],
-        "responses": { "200": { "description": "" } }
-      }
-    },
     "/api/health/live": {
       "get": {
         "operationId": "HealthController_healthLive",
