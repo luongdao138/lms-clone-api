@@ -7,4 +7,5 @@ export enum Environment {
   NODE_ENV = 'NODE_ENV',
   PORT = 'PORT',
   DATABASE_URL = 'DATABASE_URL',
+  SERVE_STATIC_ROOT_PATH = 'SERVE_STATIC_ROOT_PATH',
 }
