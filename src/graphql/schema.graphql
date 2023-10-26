@@ -8,9 +8,15 @@ type Auth {
 }
 
 type Mutation {
-  signup: Auth!
+  signup(data: SignUpInput!): Auth!
 }
 
 type Query {
   getHello: String!
+}
+
+input SignUpInput {
+  email: String!
+  password: String!
+  username: String!
 }
