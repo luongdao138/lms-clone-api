@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ServeStaticOptionsService } from './nest/providers/ServeStaticOptions.service';
 import { HealthModule } from './health/health.module';
+import { PrismaModule } from './prisma/prisma.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -12,6 +13,7 @@ import { HealthModule } from './health/health.module';
       useClass: ServeStaticOptionsService,
     }),
     HealthModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
