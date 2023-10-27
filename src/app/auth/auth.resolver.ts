@@ -4,6 +4,7 @@ import { SignUpArgs } from './dto/Signup.args';
 import { UseFilters } from '@nestjs/common';
 import { GqlResolverExceptionsFilter } from 'src/nest/filters/gql-exception.filter';
 import { AuthService } from './auth.service';
+import { LoginArgs } from './dto/Login.args';
 
 @Resolver(() => Auth)
 @UseFilters(GqlResolverExceptionsFilter)
@@ -16,5 +17,13 @@ export class AuthResolver {
 
     await this.authService.signup(data);
     return 'Success';
+  }
+
+  @Mutation(() => Auth)
+  async login(@Args({ nullable: false }) args: LoginArgs): Promise<Auth> {
+    const { data } = args;
+
+    const tokens = await this.authService.login(data);
+    return tokens;
   }
 }

@@ -2,7 +2,18 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Auth {
+  accessToken: String!
+  refreshToken: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
 type Mutation {
+  login(data: LoginInput!): Auth!
   signup(data: SignUpInput!): String!
 }
 
