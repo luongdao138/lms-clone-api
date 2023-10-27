@@ -12,6 +12,7 @@ import { join } from 'path';
 import { Request } from 'express';
 import { Environment } from './constants/env';
 import { CoreModule } from './app/core.module';
+import { RedisModule } from './redis/redis.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,6 +43,7 @@ import { CoreModule } from './app/core.module';
       },
       inject: [ConfigService],
     }),
+    RedisModule,
     CoreModule,
   ],
   controllers: [],
