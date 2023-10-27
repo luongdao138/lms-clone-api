@@ -31,7 +31,6 @@ input SignUpInput {
 type User {
   email: String!
   id: Float!
-  password: String
   role: UserRole!
   username: String
 }

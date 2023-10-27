@@ -5,3 +5,8 @@ export interface JwtPayload {
   role: $Enums.UserRole;
   email: string;
 }
+
+export interface JwtSavedToken {
+  token: string;
+  expiresIn: number;
+}

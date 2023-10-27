@@ -15,4 +15,12 @@ export class UserService {
 
     return user;
   }
+
+  async getAuthUser(where: Prisma.UserWhereInput) {
+    const user = await this.prismaService.user.findFirst({
+      where,
+    });
+
+    return user;
+  }
 }

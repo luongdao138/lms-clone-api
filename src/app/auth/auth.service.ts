@@ -6,11 +6,14 @@ import { LoginInput } from './dto/Login.input';
 import { Auth } from 'src/graphql/models/Auth';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { authOptions } from 'src/constants/auth';
 import { Environment } from 'src/constants/env';
 import { User } from 'src/graphql/models/User';
-import { JwtPayload } from 'src/types/auth';
 import { pick } from 'lodash';
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { Redis } from 'ioredis';
+import { authOptions } from './auth.constant';
+import { JwtPayload, JwtSavedToken } from './auth.interface';
+import { TimeUtil } from 'src/utils/time.util';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +22,7 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly passwordService: PasswordService,
     private readonly userService: UserService,
+    @InjectRedis() private readonly redis: Redis,
   ) {}
 
   async signup(payload: SignUpInput) {
@@ -62,22 +66,66 @@ export class AuthService {
     };
   }
 
+  async saveJwtToken(token: string, key: string, expiresIn: number) {
+    const data = {
+      token,
+      expiresIn: new Date(new Date().getTime() + expiresIn * 1000).getTime(),
+    };
+
+    await this.redis.sadd(key, JSON.stringify(data));
+  }
+
   async prepareAuthTokens(user: User): Promise<Auth> {
     const jwtPayload = this.generateJwtPayload(user);
 
     const accessToken = this.jwtService.sign(jwtPayload, {
-      secret: this.configService.get(Environment.ACCESS_TOKEN_SECRET),
+      secret: this.configService.getOrThrow(Environment.ACCESS_TOKEN_SECRET),
       expiresIn: authOptions.tokens.accessExpiresIn,
     });
 
     const refreshToken = this.jwtService.sign(jwtPayload, {
-      secret: this.configService.get(Environment.REFRESH_TOKEN_SECRET),
+      secret: this.configService.getOrThrow(Environment.REFRESH_TOKEN_SECRET),
       expiresIn: authOptions.tokens.refreshExpiresIn,
     });
+
+    await Promise.all([
+      this.saveJwtToken(
+        accessToken,
+        `${authOptions.tokens.whiteListAccessTokenPrefix}${user.id}`,
+        authOptions.tokens.accessExpiresIn,
+      ),
+      this.saveJwtToken(
+        refreshToken,
+        `${authOptions.tokens.whiteListRefreshTokenPrefix}${user.id}`,
+        authOptions.tokens.refreshExpiresIn,
+      ),
+    ]);
 
     return {
       accessToken,
       refreshToken,
     };
+  }
+
+  async validateAccessToken({
+    token,
+    userId,
+  }: {
+    token: string;
+    userId: number;
+  }): Promise<boolean> {
+    const whiteListAccessTokens =
+      (await this.redis.smembers(
+        `${authOptions.tokens.whiteListAccessTokenPrefix}${userId}`,
+      )) ?? [];
+
+    return whiteListAccessTokens.some((rawToken) => {
+      const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
+
+      return (
+        parsedToken.token === token &&
+        TimeUtil.isBefore(new Date(), parsedToken.expiresIn)
+      );
+    });
   }
 }

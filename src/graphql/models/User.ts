@@ -15,7 +15,6 @@ export class User implements PrismaUser {
   @Field(() => String, { nullable: false })
   email: string;
 
-  @Field(() => String, { nullable: true })
   @Exclude({})
   password: string;
 
