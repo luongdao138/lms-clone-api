@@ -39,6 +39,15 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
     });
 
     if (!isValid) {
+      // reuse-token => remove all tokens
+      await Promise.all([
+        this.authService.revokeJwtTokens(
+          `${authOptions.tokens.whiteListRefreshTokenPrefix}${id}`,
+        ),
+        this.authService.revokeJwtTokens(
+          `${authOptions.tokens.whiteListAccessTokenPrefix}${id}`,
+        ),
+      ]);
       throw new UnauthorizedException();
     }
 
