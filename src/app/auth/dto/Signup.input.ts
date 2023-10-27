@@ -1,10 +1,18 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 @InputType()
 export class SignUpInput {
   @Field({ nullable: false })
   @IsEmail()
+  @Transform(({ value }) => value.trim().toLowerCase())
   email: string;
 
   @Field({ nullable: false })
@@ -15,6 +23,6 @@ export class SignUpInput {
 
   @Field({ nullable: false })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   username: string;
 }

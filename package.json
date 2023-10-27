@@ -21,7 +21,8 @@
     "db:init": "yarn db:migrate:deploy && yarn db:generate",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy"
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@liaoliaots/nestjs-redis": "^9.0.5",

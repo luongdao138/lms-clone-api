@@ -2,13 +2,8 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Auth {
-  """JWT Bearer Token"""
-  token: String!
-}
-
 type Mutation {
-  signup(data: SignUpInput!): Auth!
+  signup(data: SignUpInput!): String!
 }
 
 type Query {

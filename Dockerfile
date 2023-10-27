@@ -10,11 +10,11 @@ ENV NODE_ENV=development
 
 COPY ./package.json ./yarn.lock ./
 
-RUN yarn
+RUN yarn && npm install -g pm2
 
 COPY . .
 
-CMD [ "bash", "-c",  "yarn db:init && yarn start:dev"]
+CMD [ "bash", "-c",  "yarn db:init && pm2-runtime start ecosystem.config.js"]
 
 # For building dist
 FROM node:18.13.0-slim AS build

@@ -52,6 +52,7 @@ services:
       target: development
     ports:
       - 2960:2960
+      - 5555:5555 # for prisma studio
     environment:
       - DATABASE_URL=mysql://root:luongdao@db:3306/lms-clone
       - ENABLE_SHUTDOWN_HOOKS=true
