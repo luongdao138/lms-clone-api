@@ -94,14 +94,13 @@ export class AuthService {
     } else {
       const currentTokens = (await this.redis.smembers(key)) ?? [];
 
-      await Promise.all(
-        currentTokens.map(async (rawToken) => {
-          const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
-          if (tokens.includes(parsedToken.token)) {
-            await this.redis.srem(key, rawToken);
-          }
-        }),
-      );
+      const toDeleteTokens = currentTokens.filter(async (rawToken) => {
+        const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
+        return tokens.includes(parsedToken.token);
+      });
+
+      toDeleteTokens.length > 0 &&
+        (await this.redis.srem(key, ...toDeleteTokens));
     }
   }
 

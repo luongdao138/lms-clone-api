@@ -13,7 +13,7 @@ export class PasswordService implements OnModuleInit {
   constructor(
     @Optional()
     @Inject(PASSWORD_SERVICE_OPTIONS)
-    private readonly options: PasswordModuleOptions,
+    private readonly options: PasswordModuleOptions = {},
   ) {}
 
   onModuleInit() {
