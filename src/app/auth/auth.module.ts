@@ -3,7 +3,7 @@ import { AuthResolver } from './auth.resolver';
 import { PasswordModule } from '../password/password.module';
 
 @Module({
-  imports: [PasswordModule.registerAsync()],
+  imports: [PasswordModule.registerAsync({})],
   providers: [AuthResolver],
 })
 export class AuthModule {}
