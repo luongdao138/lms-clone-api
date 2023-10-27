@@ -73,10 +73,23 @@ export class AuthService {
     ]);
   }
 
+  async refreshAccessToken(user: User, refreshToken: string) {
+    await this.revokeJwtTokens(
+      `${authOptions.tokens.whiteListRefreshTokenPrefix}${user.id}`,
+      [refreshToken],
+    );
+
+    return this.prepareAuthTokens(user);
+  }
+
   generateJwtPayload(user: User): JwtPayload {
     return {
       ...pick(user, ['id', 'email', 'role']),
     };
+  }
+
+  async retrieveJwtTokens(key: string) {
+    return (await this.redis.smembers(key)) ?? [];
   }
 
   async saveJwtToken(token: string, key: string, expiresIn: number) {
@@ -92,7 +105,7 @@ export class AuthService {
     if (!tokens) {
       await this.redis.del(key);
     } else {
-      const currentTokens = (await this.redis.smembers(key)) ?? [];
+      const currentTokens = await this.retrieveJwtTokens(key);
 
       const toDeleteTokens = currentTokens.filter(async (rawToken) => {
         const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
@@ -136,19 +149,18 @@ export class AuthService {
     };
   }
 
-  async validateAccessToken({
+  async validateJwtToken({
     token,
     userId,
+    key,
   }: {
     token: string;
     userId: number;
+    key: string;
   }): Promise<boolean> {
-    const whiteListAccessTokens =
-      (await this.redis.smembers(
-        `${authOptions.tokens.whiteListAccessTokenPrefix}${userId}`,
-      )) ?? [];
+    const whiteListTokens = await this.retrieveJwtTokens(`${key}${userId}`);
 
-    return whiteListAccessTokens.some((rawToken) => {
+    return whiteListTokens.some((rawToken) => {
       const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
 
       return (

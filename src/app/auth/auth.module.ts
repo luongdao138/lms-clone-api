@@ -7,6 +7,8 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
+import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
+import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy';
 
 @Module({
   imports: [
@@ -15,7 +17,14 @@ import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
     PassportModule,
     JwtModule.register({}),
   ],
-  providers: [AuthResolver, AuthService, JwtStrategy, GqlJwtAuthGuard],
-  exports: [AuthService, GqlJwtAuthGuard],
+  providers: [
+    AuthResolver,
+    AuthService,
+    JwtStrategy,
+    GqlJwtAuthGuard,
+    GqlJwtRefreshTokenGuard,
+    JwtRefreshTokenStrategy,
+  ],
+  exports: [AuthService, GqlJwtAuthGuard, GqlJwtRefreshTokenGuard],
 })
 export class AuthModule {}

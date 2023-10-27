@@ -39,6 +39,7 @@ export class GqlResolverExceptionsFilter implements GqlExceptionFilter {
   private logger = new Logger(GqlResolverExceptionsFilter.name);
 
   catch(exception: any, host: ArgumentsHost) {
+    console.log(exception);
     const requestData = this.prepareRequestData(host);
 
     let clientError: Error;

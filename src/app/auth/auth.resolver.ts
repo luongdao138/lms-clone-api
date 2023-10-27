@@ -10,6 +10,7 @@ import { LoginArgs } from './dto/Login.args';
 import { SignOutArgs } from './dto/Signout.args';
 import { SignUpArgs } from './dto/Signup.args';
 import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
+import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 
 @Resolver(() => Auth)
 @UseFilters(GqlResolverExceptionsFilter)
@@ -47,5 +48,14 @@ export class AuthResolver {
   ): Promise<string> {
     await this.authService.signout(user.id, args.refreshToken, token);
     return 'Success';
+  }
+
+  @Mutation(() => Auth, { name: 'refresh' })
+  @UseGuards(GqlJwtRefreshTokenGuard)
+  async refreshToken(
+    @AuthUser() user: User,
+    @AuthToken() token: string,
+  ): Promise<Auth> {
+    return this.authService.refreshAccessToken(user, token);
   }
 }
