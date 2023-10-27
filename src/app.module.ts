@@ -13,6 +13,8 @@ import { Request } from 'express';
 import { Environment } from './constants/env';
 import { CoreModule } from './app/core.module';
 import { RedisModule } from './redis/redis.module';
+import './graphql/enums'; // import to resolve all graphql enums
+
 @Module({
   imports: [
     ConfigModule.forRoot({

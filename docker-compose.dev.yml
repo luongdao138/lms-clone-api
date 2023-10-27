@@ -53,13 +53,8 @@ services:
     ports:
       - 2960:2960
       - 5555:5555 # for prisma studio
-    environment:
-      - DATABASE_URL=mysql://root:luongdao@db:3306/lms-clone
-      - ENABLE_SHUTDOWN_HOOKS=true
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - ACCESS_TOKEN_SECRET=f2957cade5fd8acbd4e47ee75650866b04dafc5b37c89a64e3cd311e5b31d51d
-      - REFRESH_TOKEN_SECRET=e360356147bafa75a07153e0e7b5d8a96f29bc82edeab9ef8f971843a3c94686
+    env_file:
+      - .env.dev
     depends_on:
       - migrate
       - redis

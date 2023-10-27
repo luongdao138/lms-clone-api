@@ -19,10 +19,25 @@ type Mutation {
 
 type Query {
   getHello: String!
+  me: User!
 }
 
 input SignUpInput {
   email: String!
   password: String!
   username: String!
+}
+
+type User {
+  email: String!
+  id: Float!
+  password: String
+  role: UserRole!
+  username: String
+}
+
+enum UserRole {
+  ADMIN
+  STUDENT
+  TEACHER
 }
