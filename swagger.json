@@ -5,14 +5,16 @@
       "get": {
         "operationId": "HealthController_healthLive",
         "parameters": [],
-        "responses": { "200": { "description": "" } }
+        "responses": { "200": { "description": "" } },
+        "tags": ["Health"]
       }
     },
     "/api/health/ready": {
       "get": {
         "operationId": "HealthController_healthReady",
         "parameters": [],
-        "responses": { "200": { "description": "" } }
+        "responses": { "200": { "description": "" } },
+        "tags": ["Health"]
       }
     }
   },

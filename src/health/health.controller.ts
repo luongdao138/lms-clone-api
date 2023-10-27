@@ -1,11 +1,13 @@
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { RedisHealthIndicator } from '@liaoliaots/nestjs-redis-health';
 import { Controller, Get } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
 import { Redis } from 'ioredis';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Controller('health')
+@ApiTags('Health')
 export class HealthController {
   constructor(
     protected readonly healthService: HealthCheckService,
