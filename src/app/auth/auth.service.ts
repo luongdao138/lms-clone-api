@@ -60,6 +60,19 @@ export class AuthService {
     return this.prepareAuthTokens(existingUser);
   }
 
+  async signout(userId: number, refreshToken: string, accessToken: string) {
+    await Promise.all([
+      this.revokeJwtTokens(
+        `${authOptions.tokens.whiteListRefreshTokenPrefix}${userId}`,
+        [refreshToken],
+      ),
+      this.revokeJwtTokens(
+        `${authOptions.tokens.whiteListAccessTokenPrefix}${userId}`,
+        [accessToken],
+      ),
+    ]);
+  }
+
   generateJwtPayload(user: User): JwtPayload {
     return {
       ...pick(user, ['id', 'email', 'role']),
@@ -73,6 +86,23 @@ export class AuthService {
     };
 
     await this.redis.sadd(key, JSON.stringify(data));
+  }
+
+  async revokeJwtTokens(key: string, tokens?: string[]) {
+    if (!tokens) {
+      await this.redis.del(key);
+    } else {
+      const currentTokens = (await this.redis.smembers(key)) ?? [];
+
+      await Promise.all(
+        currentTokens.map(async (rawToken) => {
+          const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
+          if (tokens.includes(parsedToken.token)) {
+            await this.redis.srem(key, rawToken);
+          }
+        }),
+      );
+    }
   }
 
   async prepareAuthTokens(user: User): Promise<Auth> {
