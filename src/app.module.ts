@@ -39,6 +39,7 @@ import { RedisModule } from './redis/redis.module';
               req,
             };
           },
+          resolvers: {},
         };
       },
       inject: [ConfigService],

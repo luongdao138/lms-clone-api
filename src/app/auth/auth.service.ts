@@ -4,10 +4,19 @@ import { UserService } from '../user/user.service';
 import { SignUpInput } from './dto/Signup.input';
 import { LoginInput } from './dto/Login.input';
 import { Auth } from 'src/graphql/models/Auth';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { authOptions } from 'src/constants/auth';
+import { Environment } from 'src/constants/env';
+import { User } from 'src/graphql/models/User';
+import { JwtPayload } from 'src/types/auth';
+import { pick } from 'lodash';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly configService: ConfigService,
+    private jwtService: JwtService,
     private readonly passwordService: PasswordService,
     private readonly userService: UserService,
   ) {}
@@ -44,9 +53,31 @@ export class AuthService {
       throw new HttpException('Email or password is not correct', 400);
     }
 
+    return this.prepareAuthTokens(existingUser);
+  }
+
+  generateJwtPayload(user: User): JwtPayload {
     return {
-      accessToken: 'accessToken',
-      refreshToken: 'refreshToken',
+      ...pick(user, ['id', 'email', 'role']),
+    };
+  }
+
+  async prepareAuthTokens(user: User): Promise<Auth> {
+    const jwtPayload = this.generateJwtPayload(user);
+
+    const accessToken = this.jwtService.sign(jwtPayload, {
+      secret: this.configService.get(Environment.ACCESS_TOKEN_SECRET),
+      expiresIn: authOptions.tokens.accessExpiresIn,
+    });
+
+    const refreshToken = this.jwtService.sign(jwtPayload, {
+      secret: this.configService.get(Environment.REFRESH_TOKEN_SECRET),
+      expiresIn: authOptions.tokens.refreshExpiresIn,
+    });
+
+    return {
+      accessToken,
+      refreshToken,
     };
   }
 }
