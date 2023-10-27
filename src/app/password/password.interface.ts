@@ -7,7 +7,7 @@ export interface PasswordHashingStrategy {
 }
 
 export interface PasswordModuleOptions {
-  strategy?: PasswordHashingStrategy;
+  strategy?: Type<PasswordHashingStrategy>;
   strategyOptions?: Record<string, any>;
 }
 
