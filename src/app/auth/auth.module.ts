@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
 import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy';
+import { AuthCronService } from './auth-cron.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy
     GqlJwtAuthGuard,
     GqlJwtRefreshTokenGuard,
     JwtRefreshTokenStrategy,
+    AuthCronService,
   ],
   exports: [AuthService, GqlJwtAuthGuard, GqlJwtRefreshTokenGuard],
 })

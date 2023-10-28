@@ -128,7 +128,7 @@ export class AuthService {
     } else {
       const currentTokens = await this.retrieveJwtTokens(key);
 
-      const toDeleteTokens = currentTokens.filter(async (rawToken) => {
+      const toDeleteTokens = currentTokens.filter((rawToken) => {
         const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
         return tokens.includes(parsedToken.token);
       });
@@ -138,20 +138,9 @@ export class AuthService {
     }
   }
 
-  async prepareAuthTokens(user: User): Promise<Auth> {
-    const jwtPayload = this.generateJwtPayload(user);
-    const accessTokenKey = this.generateTokenKey(user.id);
-    const refreshTokenKey = this.generateTokenKey(user.id, 'refresh');
-
-    const accessToken = this.jwtService.sign(jwtPayload, {
-      secret: this.configService.getOrThrow(Environment.ACCESS_TOKEN_SECRET),
-      expiresIn: authOptions.tokens.accessExpiresIn,
-    });
-
-    const refreshToken = this.jwtService.sign(jwtPayload, {
-      secret: this.configService.getOrThrow(Environment.REFRESH_TOKEN_SECRET),
-      expiresIn: authOptions.tokens.refreshExpiresIn,
-    });
+  async revokeExpiredJwtTokens(userId: number) {
+    const accessTokenKey = this.generateTokenKey(userId);
+    const refreshTokenKey = this.generateTokenKey(userId, 'refresh');
 
     const [whiteListAccessTokens, whiteListRefreshTokens] = await Promise.all([
       this.retrieveJwtTokens(accessTokenKey),
@@ -174,19 +163,34 @@ export class AuthService {
       promises.push(this.redis.srem(refreshTokenKey, toDeleteRefreshTokens));
     }
 
-    promises.push(
+    await Promise.all(promises);
+  }
+
+  async prepareAuthTokens(user: User): Promise<Auth> {
+    const jwtPayload = this.generateJwtPayload(user);
+    const accessToken = this.jwtService.sign(jwtPayload, {
+      secret: this.configService.getOrThrow(Environment.ACCESS_TOKEN_SECRET),
+      expiresIn: authOptions.tokens.accessExpiresIn,
+    });
+
+    const refreshToken = this.jwtService.sign(jwtPayload, {
+      secret: this.configService.getOrThrow(Environment.REFRESH_TOKEN_SECRET),
+      expiresIn: authOptions.tokens.refreshExpiresIn,
+    });
+
+    const promises = [
+      this.revokeExpiredJwtTokens(user.id),
       this.saveJwtToken(
         accessToken,
-        accessTokenKey,
+        this.generateTokenKey(user.id),
         authOptions.tokens.accessExpiresIn,
       ),
       this.saveJwtToken(
         refreshToken,
-        refreshTokenKey,
+        this.generateTokenKey(user.id, 'refresh'),
         authOptions.tokens.refreshExpiresIn,
       ),
-    );
-
+    ];
     await Promise.all(promises);
 
     return {

@@ -14,6 +14,7 @@ import { Environment } from './constants/env';
 import { CoreModule } from './app/core.module';
 import { RedisModule } from './redis/redis.module';
 import './graphql/enums'; // import to resolve all graphql enums
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import './graphql/enums'; // import to resolve all graphql enums
     }),
     RedisModule,
     CoreModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [],
   providers: [AppService, AppResolver],
