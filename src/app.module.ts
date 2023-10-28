@@ -14,12 +14,18 @@ import './graphql/enums'; // import to resolve all graphql enums
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaOptionsService } from './nest/providers/PrismaOptions.service';
 import { GqlOptionsService } from './nest/providers/GqlOptions.service';
+import {
+  envValidatorSchema,
+  validationOptions,
+} from './nest/validators/env.validator';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
+      validationSchema: envValidatorSchema,
+      validationOptions,
     }),
     ServeStaticModule.forRootAsync({
       useClass: ServeStaticOptionsService,
