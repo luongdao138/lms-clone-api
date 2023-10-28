@@ -29,15 +29,24 @@ export function createAsyncProviders(
   }
 
   if (options.useClass || options.useExisting) {
-    return [
-      {
-        provide: PASSWORD_SERVICE_OPTIONS,
-        useFactory(optionsFactory: PasswordOptionsFactory) {
-          return optionsFactory.createPasswordOptions();
-        },
-        inject: [options.useClass || options.useExisting],
+    const providers = [];
+
+    if (options.useClass) {
+      providers.push({
+        provide: options.useClass,
+        useClass: options.useClass,
+      });
+    }
+
+    providers.push({
+      provide: PASSWORD_SERVICE_OPTIONS,
+      useFactory(optionsFactory: PasswordOptionsFactory) {
+        return optionsFactory.createPasswordOptions();
       },
-    ];
+      inject: [options.useClass || options.useExisting],
+    });
+
+    return providers;
   }
 
   return [

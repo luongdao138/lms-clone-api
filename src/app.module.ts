@@ -15,6 +15,7 @@ import { CoreModule } from './app/core.module';
 import { RedisModule } from './redis/redis.module';
 import './graphql/enums'; // import to resolve all graphql enums
 import { ScheduleModule } from '@nestjs/schedule';
+import { PrismaOptionsService } from './nest/providers/PrismaOptions.service';
 
 @Module({
   imports: [
@@ -26,7 +27,10 @@ import { ScheduleModule } from '@nestjs/schedule';
       useClass: ServeStaticOptionsService,
     }),
     HealthModule,
-    PrismaModule,
+    PrismaModule.forRootAsync({
+      isGlobal: true,
+      useClass: PrismaOptionsService,
+    }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       async useFactory(configService: ConfigService) {
