@@ -1,5 +1,5 @@
 import { Logger, Module, OnApplicationShutdown } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppResolver } from './app.resolver';
 import { AppService } from './app.service';
@@ -8,14 +8,12 @@ import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { join } from 'path';
-import { Request } from 'express';
-import { Environment } from './constants/env';
 import { CoreModule } from './app/core.module';
 import { RedisModule } from './redis/redis.module';
 import './graphql/enums'; // import to resolve all graphql enums
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaOptionsService } from './nest/providers/PrismaOptions.service';
+import { GqlOptionsService } from './nest/providers/GqlOptions.service';
 
 @Module({
   imports: [
@@ -33,23 +31,7 @@ import { PrismaOptionsService } from './nest/providers/PrismaOptions.service';
     }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      async useFactory(configService: ConfigService) {
-        return {
-          autoSchemaFile: join(process.cwd(), 'src/graphql', 'schema.graphql'),
-          sortSchema: true,
-          debug: configService.get(Environment.GRAPHQL_DEBUG) === '1',
-          playground: configService.get(Environment.GRAPHQL_PLAYGROUND) === '1',
-          introspection:
-            configService.get(Environment.GRAPHQL_INTROSPECTION) === '1',
-          context({ req }: { req: Request }) {
-            return {
-              req,
-            };
-          },
-          resolvers: {},
-        };
-      },
-      inject: [ConfigService],
+      useClass: GqlOptionsService,
     }),
     RedisModule,
     CoreModule,
