@@ -62,22 +62,17 @@ export class AuthService {
 
   async signout(userId: number, refreshToken: string, accessToken: string) {
     await Promise.all([
-      this.revokeJwtTokens(
-        `${authOptions.tokens.whiteListRefreshTokenPrefix}${userId}`,
-        [refreshToken],
-      ),
-      this.revokeJwtTokens(
-        `${authOptions.tokens.whiteListAccessTokenPrefix}${userId}`,
-        [accessToken],
-      ),
+      this.revokeJwtTokens(this.generateTokenKey(userId), [accessToken]),
+      this.revokeJwtTokens(this.generateTokenKey(userId, 'refresh'), [
+        refreshToken,
+      ]),
     ]);
   }
 
   async refreshAccessToken(user: User, refreshToken: string) {
-    await this.revokeJwtTokens(
-      `${authOptions.tokens.whiteListRefreshTokenPrefix}${user.id}`,
-      [refreshToken],
-    );
+    await this.revokeJwtTokens(this.generateTokenKey(user.id, 'refresh'), [
+      refreshToken,
+    ]);
 
     return this.prepareAuthTokens(user);
   }
@@ -86,6 +81,32 @@ export class AuthService {
     return {
       ...pick(user, ['id', 'email', 'role']),
     };
+  }
+
+  generateTokenKey(userId: number, type: 'access' | 'refresh' = 'access') {
+    let prefix = '';
+
+    switch (type) {
+      case 'access':
+        prefix = authOptions.tokens.whiteListAccessTokenPrefix;
+        break;
+      case 'refresh':
+        prefix = authOptions.tokens.whiteListRefreshTokenPrefix;
+        break;
+      default:
+        break;
+    }
+
+    return `${prefix}${userId}`;
+  }
+
+  checkValidToken(rawToken: string, comparedToken?: string): boolean {
+    const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
+
+    const isNotExpired = TimeUtil.isBefore(new Date(), parsedToken.expiresIn);
+    if (!comparedToken) return isNotExpired;
+
+    return isNotExpired && comparedToken === parsedToken.token;
   }
 
   async retrieveJwtTokens(key: string) {
@@ -119,6 +140,8 @@ export class AuthService {
 
   async prepareAuthTokens(user: User): Promise<Auth> {
     const jwtPayload = this.generateJwtPayload(user);
+    const accessTokenKey = this.generateTokenKey(user.id);
+    const refreshTokenKey = this.generateTokenKey(user.id, 'refresh');
 
     const accessToken = this.jwtService.sign(jwtPayload, {
       secret: this.configService.getOrThrow(Environment.ACCESS_TOKEN_SECRET),
@@ -130,18 +153,41 @@ export class AuthService {
       expiresIn: authOptions.tokens.refreshExpiresIn,
     });
 
-    await Promise.all([
+    const [whiteListAccessTokens, whiteListRefreshTokens] = await Promise.all([
+      this.retrieveJwtTokens(accessTokenKey),
+      this.retrieveJwtTokens(refreshTokenKey),
+    ]);
+
+    const promises = [];
+
+    const toDeleteAccessTokens = whiteListAccessTokens.filter(
+      (rawToken) => !this.checkValidToken(rawToken),
+    );
+    const toDeleteRefreshTokens = whiteListRefreshTokens.filter(
+      (rawToken) => !this.checkValidToken(rawToken),
+    );
+
+    if (toDeleteAccessTokens.length) {
+      promises.push(this.redis.srem(accessTokenKey, toDeleteAccessTokens));
+    }
+    if (toDeleteRefreshTokens.length) {
+      promises.push(this.redis.srem(refreshTokenKey, toDeleteRefreshTokens));
+    }
+
+    promises.push(
       this.saveJwtToken(
         accessToken,
-        `${authOptions.tokens.whiteListAccessTokenPrefix}${user.id}`,
+        accessTokenKey,
         authOptions.tokens.accessExpiresIn,
       ),
       this.saveJwtToken(
         refreshToken,
-        `${authOptions.tokens.whiteListRefreshTokenPrefix}${user.id}`,
+        refreshTokenKey,
         authOptions.tokens.refreshExpiresIn,
       ),
-    ]);
+    );
+
+    await Promise.all(promises);
 
     return {
       accessToken,
@@ -160,13 +206,8 @@ export class AuthService {
   }): Promise<boolean> {
     const whiteListTokens = await this.retrieveJwtTokens(`${key}${userId}`);
 
-    return whiteListTokens.some((rawToken) => {
-      const parsedToken = JSON.parse(rawToken) as JwtSavedToken;
-
-      return (
-        parsedToken.token === token &&
-        TimeUtil.isBefore(new Date(), parsedToken.expiresIn)
-      );
-    });
+    return whiteListTokens.some((rawToken) =>
+      this.checkValidToken(rawToken, token),
+    );
   }
 }
