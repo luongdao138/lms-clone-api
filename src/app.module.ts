@@ -23,7 +23,6 @@ import {
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env', '.env.local'],
       validationSchema: envValidatorSchema,
       validationOptions,
     }),
