@@ -12,6 +12,8 @@ import { SignUpArgs } from './dto/Signup.args';
 import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
 import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 import { Public } from 'src/nest/decorators/public.decorator';
+import { Roles } from 'src/nest/decorators/role.decorator';
+import { ROLE_ALL } from 'src/constants/role';
 
 @Resolver(() => Auth)
 @UseFilters(GqlResolverExceptionsFilter)
@@ -43,6 +45,7 @@ export class AuthResolver {
   }
 
   @Mutation(() => String)
+  @Roles(ROLE_ALL)
   @UseGuards(GqlJwtAuthGuard)
   async signout(
     @AuthUser() user: User,
