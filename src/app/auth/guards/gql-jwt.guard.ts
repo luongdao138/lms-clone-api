@@ -4,6 +4,7 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard } from '@nestjs/passport';
 import { PUBLIC_KEY, USER_ROLE_KEY } from 'src/constants/metadata-key';
 import { User } from 'src/graphql/models/User';
+import { GqlContext } from 'src/types/common';
 
 @Injectable()
 export class GqlJwtAuthGuard extends AuthGuard('jwt') {
@@ -33,14 +34,13 @@ export class GqlJwtAuthGuard extends AuthGuard('jwt') {
     currentUser: User,
   ): boolean {
     const expectedRoles = this.reflector.get<string[]>(USER_ROLE_KEY, handler);
-
-    if (!expectedRoles) return true;
+    if (!expectedRoles) return false;
 
     return expectedRoles.includes(currentUser.role);
   }
 
   getRequest(context: ExecutionContext) {
     const ctx = GqlExecutionContext.create(context);
-    return ctx.getContext().req;
+    return ctx.getContext<GqlContext>().req;
   }
 }

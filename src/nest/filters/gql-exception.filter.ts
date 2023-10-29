@@ -4,12 +4,13 @@ import { GqlArgumentsHost, GqlExceptionFilter } from '@nestjs/graphql';
 import { ApolloError } from 'apollo-server-express';
 import { Request } from 'express';
 import { Environment, NodeEnv } from 'src/constants/env';
+import { GqlContext } from 'src/types/common';
 
 export type RequestData = {
   query: string;
   hostname: string;
   ip: string;
-  userId: string;
+  userId: number;
 };
 
 export class InternalServerError extends ApolloError {
@@ -19,7 +20,7 @@ export class InternalServerError extends ApolloError {
 }
 
 interface RequestWithUser extends Request {
-  user: { id: string } | null;
+  user: { id: number } | null;
 }
 
 export function createRequestData(req: RequestWithUser): RequestData {
@@ -59,7 +60,7 @@ export class GqlResolverExceptionsFilter implements GqlExceptionFilter {
   }
 
   private prepareRequestData(host: ArgumentsHost) {
-    const context = GqlArgumentsHost.create(host).getContext();
+    const context = GqlArgumentsHost.create(host).getContext<GqlContext>();
 
     return context.req ? createRequestData(context.req) : null;
   }

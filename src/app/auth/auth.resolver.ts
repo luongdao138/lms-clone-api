@@ -11,12 +11,14 @@ import { SignOutArgs } from './dto/Signout.args';
 import { SignUpArgs } from './dto/Signup.args';
 import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
 import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
+import { Public } from 'src/nest/decorators/public.decorator';
 
 @Resolver(() => Auth)
 @UseFilters(GqlResolverExceptionsFilter)
 export class AuthResolver {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Mutation(() => String)
   async signup(@Args({ nullable: false }) args: SignUpArgs): Promise<string> {
     const { data } = args;
@@ -25,6 +27,7 @@ export class AuthResolver {
     return 'Success';
   }
 
+  @Public()
   @Mutation(() => Auth)
   async login(@Args({ nullable: false }) args: LoginArgs): Promise<Auth> {
     const { data } = args;
