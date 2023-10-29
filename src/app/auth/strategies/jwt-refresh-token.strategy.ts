@@ -8,6 +8,7 @@ import { Request } from 'express';
 import { AuthService } from '../auth.service';
 import { authOptions } from '../auth.constant';
 import { UserService } from 'src/app/user/user.service';
+import { $Enums } from '@prisma/client';
 
 @Injectable()
 export class JwtRefreshTokenStrategy extends PassportStrategy(
@@ -52,6 +53,10 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
     const user = await this.userService.getAuthUser({
       id,
     });
+
+    if (user.status !== $Enums.UserStatus.ACTIVE) {
+      throw new UnauthorizedException();
+    }
 
     // enrich the req.user with whole user entity
     return user;

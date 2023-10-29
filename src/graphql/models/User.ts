@@ -6,6 +6,12 @@ import { Exclude } from 'class-transformer';
   isAbstract: true,
 })
 export class User implements PrismaUser {
+  @Field(() => $Enums.UserStatus, { nullable: false })
+  status: $Enums.UserStatus;
+
+  @Field(() => Number, { nullable: false })
+  profileId: number;
+
   @Field(() => Number, { nullable: false })
   id: number;
 
@@ -29,4 +35,10 @@ export class User implements PrismaUser {
 
   @Exclude({})
   deletedAt: Date;
+
+  createdBy: number;
+
+  updatedBy: number;
+
+  deletedBy: number;
 }

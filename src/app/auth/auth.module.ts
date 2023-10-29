@@ -10,11 +10,13 @@ import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
 import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy';
 import { AuthCronService } from './auth-cron.service';
+import { UserProfileModule } from '../user-profile/user-profile.module';
 
 @Module({
   imports: [
     PasswordModule.registerAsync({}),
     UserModule,
+    UserProfileModule,
     PassportModule,
     JwtModule.register({}),
   ],

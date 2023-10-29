@@ -9,6 +9,7 @@ import { AuthService } from '../auth.service';
 import { JwtPayload } from '../auth.interface';
 import { omit } from 'lodash';
 import { authOptions } from '../auth.constant';
+import { $Enums } from '@prisma/client';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -44,6 +45,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const user = await this.userService.getAuthUser({
       id,
     });
+
+    if (user.status !== $Enums.UserStatus.ACTIVE) {
+      throw new UnauthorizedException();
+    }
 
     return omit(user, ['password']);
   }

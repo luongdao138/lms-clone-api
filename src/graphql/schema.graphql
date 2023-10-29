@@ -27,18 +27,26 @@ type Query {
 input SignUpInput {
   email: String!
   password: String!
-  username: String!
+  username: String
 }
 
 type User {
   email: String!
   id: Float!
+  profileId: Float!
   role: UserRole!
+  status: UserStatus!
   username: String
 }
 
 enum UserRole {
   ADMIN
+  INSTRUCTOR
   STUDENT
-  TEACHER
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  PENDING
 }

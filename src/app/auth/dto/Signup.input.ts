@@ -21,7 +21,7 @@ export class SignUpInput {
   @MinLength(8)
   password: string;
 
-  @Field({ nullable: false })
+  @Field({ nullable: true })
   @IsString()
   @IsOptional()
   username: string;

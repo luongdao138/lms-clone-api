@@ -12,8 +12,49 @@ datasource db {
 
 enum UserRole {
   ADMIN
-  TEACHER
+  INSTRUCTOR
   STUDENT
+}
+
+enum CourseElementStatus {
+  ACTIVE
+  DRAFT
+  DELETED
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  BANNED
+}
+
+enum PriceListStatus {
+  ACTIVE
+  DRAFT
+}
+
+enum PriceListType {
+  SALE
+  OVERRIDE
+}
+
+enum CourseChapterResourceType {
+  LINK
+  RESOURCE
+}
+
+enum CourseMetadataType {
+  BENEFIT
+  PREREQUISITE
+  TARGET
+}
+
+enum ProfileLinkType {
+  WEBSITE
+  TWITTER
+  FACEBOOK
+  YOUTUBE
+  LINKEDIN
 }
 
 model User {
@@ -22,13 +63,57 @@ model User {
   username String?
   email    String
   password String?
-  role     UserRole @default(STUDENT)
+  role     UserRole   @default(STUDENT)
+  status   UserStatus @default(ACTIVE)
+
+  profileId Int                @unique
+  profile   UserProfile        @relation(fields: [profileId], references: [id])
+  courses   CourseInstructor[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
 
   @@unique([email])
+}
+
+model UserProfile {
+  id Int @id @default(autoincrement())
+
+  firstname String?
+  lastname  String?
+  avatar    String?
+  intro     String?
+  headline  String?
+
+  user  User?
+  links UserProfileLink[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model UserProfileLink {
+  id   Int             @id @default(autoincrement())
+  type ProfileLinkType
+  url  String
+
+  profileId Int
+  profile   UserProfile @relation(fields: [profileId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
 }
 
 model Category {
@@ -36,4 +121,216 @@ model Category {
 
   title    String
   priority Int
+
+  courses CourseCategory[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model Currency {
+  code         String  @id
+  name         String
+  symbol       String?
+  symbolNative String?
+
+  prices CoursePrice[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  value String
+
+  courses CourseTag[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model Resource {
+  id Int @id @default(autoincrement())
+
+  url      String
+  type     String?
+  size     BigInt?
+  chapters CourseChapter[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model PriceList {
+  id Int @id @default(autoincrement())
+
+  startsAt DateTime?
+  endsAt   DateTime?
+  status   PriceListStatus @default(ACTIVE)
+  type     PriceListType   @default(SALE)
+
+  prices CoursePrice[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model Course {
+  id Int @id @default(autoincrement())
+
+  title       String
+  description String?             @db.Text
+  thumbnail   String
+  status      CourseElementStatus @default(DRAFT)
+  preview     String
+
+  categories  CourseCategory[]
+  metadatas   CourseMetadata[]
+  tags        CourseTag[]
+  prices      CoursePrice[]
+  sections    CourseSection[]
+  chapters    CourseChapter[]
+  instructors CourseInstructor[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model CourseCategory {
+  categoryId Int
+  courseId   Int
+  priority   Int @default(0)
+
+  course   Course   @relation(fields: [courseId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([categoryId, courseId])
+}
+
+model CourseMetadata {
+  id    Int                @id @default(autoincrement())
+  type  CourseMetadataType
+  value String
+
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model CourseTag {
+  tagId    Int
+  courseId Int
+  priority Int @default(0)
+
+  course Course @relation(fields: [courseId], references: [id])
+  tag    Tag    @relation(fields: [tagId], references: [id])
+
+  @@id([tagId, courseId])
+}
+
+model CoursePrice {
+  id Int @id @default(autoincrement())
+
+  amount Int
+
+  priceListId  Int
+  courseId     Int
+  currencyCode String
+  course       Course    @relation(fields: [courseId], references: [id])
+  priceList    PriceList @relation(fields: [priceListId], references: [id])
+  currency     Currency  @relation(fields: [currencyCode], references: [code])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model CourseSection {
+  id Int @id @default(autoincrement())
+
+  title        String
+  status       CourseElementStatus @default(DRAFT)
+  length       Int                 @default(0)
+  totalChapter Int                 @default(0)
+  priority     Int                 @default(0)
+
+  courseId Int
+  course   Course          @relation(fields: [courseId], references: [id])
+  chapters CourseChapter[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model CourseChapter {
+  id Int @id @default(autoincrement())
+
+  title       String
+  description String?             @db.Text
+  status      CourseElementStatus @default(DRAFT)
+  length      Int                 @default(0)
+  priority    Int                 @default(0)
+
+  courseId  Int
+  sectionId Int
+  resouceId Int
+  course    Course        @relation(fields: [courseId], references: [id])
+  section   CourseSection @relation(fields: [sectionId], references: [id])
+  resource  Resource      @relation(fields: [resouceId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+}
+
+model CourseInstructor {
+  instructorId Int
+  courseId     Int
+  priority     Int @default(0)
+
+  course     Course @relation(fields: [courseId], references: [id])
+  instructor User   @relation(fields: [instructorId], references: [id])
+
+  @@id([instructorId, courseId])
 }

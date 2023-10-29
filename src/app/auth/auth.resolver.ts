@@ -39,6 +39,7 @@ export class AuthResolver {
   }
 
   @Query(() => User)
+  @Roles(ROLE_ALL)
   @UseGuards(GqlJwtAuthGuard)
   async me(@AuthUser() user: User): Promise<User> {
     return user;

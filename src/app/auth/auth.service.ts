@@ -14,6 +14,8 @@ import { Redis } from 'ioredis';
 import { authOptions } from './auth.constant';
 import { JwtPayload, JwtSavedToken } from './auth.interface';
 import { TimeUtil } from 'src/utils/time.util';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UserProfileService } from '../user-profile/user-profile.service';
 
 @Injectable()
 export class AuthService {
@@ -22,25 +24,44 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly passwordService: PasswordService,
     private readonly userService: UserService,
+    private prisma: PrismaService,
     @InjectRedis() private readonly redis: Redis,
+    private readonly userProfileService: UserProfileService,
   ) {}
 
-  async signup(payload: SignUpInput) {
-    const { email, password, ...rest } = payload;
-    const existingUser = await this.userService.findUserByEmail(email);
+  async signup(payload: SignUpInput): Promise<User> {
+    return await this.prisma.$transaction(async (tx) => {
+      const { email, password, ...rest } = payload;
+      const existingUser = await this.userService.findUserByEmail(email, tx);
 
-    if (existingUser) throw new HttpException('Email already exists', 422);
-    const hashedPassword = await this.passwordService.hash(password);
+      if (existingUser) throw new HttpException('Email already exists', 422);
+      const hashedPassword = await this.passwordService.hash(password);
 
-    const user = await this.userService.createUser({
-      data: {
-        email,
-        password: hashedPassword,
-        ...rest,
-      },
+      // create new empty profile for user
+      const userProfile = await this.userProfileService.createProfile(
+        {
+          data: {},
+          select: {
+            id: true,
+          },
+        },
+        tx,
+      );
+
+      const user = await this.userService.createUser(
+        {
+          data: {
+            email,
+            password: hashedPassword,
+            profileId: userProfile.id,
+            ...rest,
+          },
+        },
+        tx,
+      );
+
+      return user;
     });
-
-    return user;
   }
 
   async login(payload: LoginInput): Promise<Auth> {
