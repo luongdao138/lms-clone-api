@@ -1,7 +1,6 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, User } from '@prisma/client';
 import { DefaultArgs } from '@prisma/client/runtime/library';
 import { Request } from 'express';
-import { User } from 'src/graphql/models/User';
 
 export interface GqlContext {
   req: Request & { user: User };

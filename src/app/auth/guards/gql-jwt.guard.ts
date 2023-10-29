@@ -2,8 +2,8 @@ import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard } from '@nestjs/passport';
+import { User } from '@prisma/client';
 import { PUBLIC_KEY, USER_ROLE_KEY } from 'src/constants/metadata-key';
-import { User } from 'src/graphql/models/User';
 import { GqlContext } from 'src/types/common';
 
 @Injectable()

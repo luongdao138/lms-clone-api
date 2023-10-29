@@ -7,7 +7,6 @@ import { Auth } from 'src/graphql/models/Auth';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from 'src/constants/env';
-import { User } from 'src/graphql/models/User';
 import { pick } from 'lodash';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
@@ -16,6 +15,7 @@ import { JwtPayload, JwtSavedToken } from './auth.interface';
 import { TimeUtil } from 'src/utils/time.util';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserProfileService } from '../user-profile/user-profile.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {

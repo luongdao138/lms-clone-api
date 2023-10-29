@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { Environment } from 'src/constants/env';
 import { PrismaOptionsFactory } from 'src/prisma/prisma.interface';
-import { splitEnv } from 'src/utils/splitEnv';
+import { splitEnv } from 'src/utils/env';
 
 @Injectable()
 export class PrismaOptionsService implements PrismaOptionsFactory {

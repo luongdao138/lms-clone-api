@@ -1,11 +1,12 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { $Enums, User as PrismaUser } from '@prisma/client';
 import { Exclude } from 'class-transformer';
+import { GqlUserProfile } from './UserProfile';
 
 @ObjectType({
   isAbstract: true,
 })
-export class User implements PrismaUser {
+export class GqlUser implements PrismaUser {
   @Field(() => $Enums.UserStatus, { nullable: false })
   status: $Enums.UserStatus;
 
@@ -41,4 +42,8 @@ export class User implements PrismaUser {
   updatedBy: number;
 
   deletedBy: number;
+
+  // resolved fields
+  @Field(() => GqlUserProfile, { nullable: false })
+  profile: GqlUserProfile;
 }

@@ -14,4 +14,12 @@ export class UserProfileService {
     const prismaInstance = tx ?? this.prisma;
     return prismaInstance.userProfile.create(args);
   }
+
+  async getProfile(
+    args: Prisma.UserProfileFindUniqueArgs,
+    tx?: PrismaClientTransaction,
+  ) {
+    const prismaInstance = tx ?? this.prisma;
+    return prismaInstance.userProfile.findUnique(args);
+  }
 }

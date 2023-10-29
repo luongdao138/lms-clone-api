@@ -7,6 +7,25 @@ type Auth {
   refreshToken: String!
 }
 
+type GqlUser {
+  email: String!
+  id: Float!
+  profile: GqlUserProfile!
+  profileId: Float!
+  role: UserRole!
+  status: UserStatus!
+  username: String
+}
+
+type GqlUserProfile {
+  avatar: String
+  firstname: String
+  headline: String
+  id: Float!
+  intro: String
+  lastname: String
+}
+
 input LoginInput {
   email: String!
   password: String!
@@ -21,21 +40,12 @@ type Mutation {
 
 type Query {
   getHello: String!
-  me: User!
+  me: GqlUser!
 }
 
 input SignUpInput {
   email: String!
   password: String!
-  username: String
-}
-
-type User {
-  email: String!
-  id: Float!
-  profileId: Float!
-  role: UserRole!
-  status: UserStatus!
   username: String
 }
 
