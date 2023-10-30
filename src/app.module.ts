@@ -18,6 +18,8 @@ import {
   envValidatorSchema,
   validationOptions,
 } from './nest/validators/env.validator';
+import { RabbitMqOptionsService } from './nest/providers/RabbitMqOptions.service';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
 @Module({
   imports: [
@@ -41,6 +43,9 @@ import {
     RedisModule,
     CoreModule,
     ScheduleModule.forRoot(),
+    RabbitMQModule.forRootAsync(RabbitMQModule, {
+      useClass: RabbitMqOptionsService,
+    }),
   ],
   controllers: [],
   providers: [AppService, AppResolver],

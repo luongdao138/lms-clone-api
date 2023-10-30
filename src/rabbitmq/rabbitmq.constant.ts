@@ -1,0 +1,1 @@
+export const DEFAULT_CHANNEL = 'LMS_CLONE_DEFAULT';

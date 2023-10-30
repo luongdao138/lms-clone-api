@@ -25,6 +25,8 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@golevelup/nestjs-modules": "^0.7.0",
+    "@golevelup/nestjs-rabbitmq": "^4.0.0",
     "@liaoliaots/nestjs-redis": "^9.0.5",
     "@liaoliaots/nestjs-redis-health": "^9.0.4",
     "@nestjs/apollo": "^10.2.0",
@@ -41,8 +43,6 @@
     "@nestjs/terminus": "^10.1.1",
     "@prisma/client": "^5.5.0",
     "@types/bcryptjs": "^2.4.5",
-    "amqp-connection-manager": "^4.1.14",
-    "amqplib": "^0.10.3",
     "apollo-server-express": "^3.12.1",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
