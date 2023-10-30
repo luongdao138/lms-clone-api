@@ -9,21 +9,14 @@ export enum EXCHANGE_TYPE {
   HEADERS = 'headers',
 }
 
+// we only use one exchange for now
 export enum EXCHANGE_NAME {
-  EMAIL = 'email',
-}
-
-export enum QUEUE_NAME {
-  EMAIL = 'email',
-}
-
-export enum BINDING_ROUTING_KEY {
-  EMAIL = 'email:#',
+  LMS_EVENT_BUS = 'lms_event_bus',
 }
 
 export const exchanges: RabbitMQExchangeConfig[] = [
   {
-    name: EXCHANGE_NAME.EMAIL,
+    name: EXCHANGE_NAME.LMS_EVENT_BUS,
     type: EXCHANGE_TYPE.TOPIC,
     options: {},
   },

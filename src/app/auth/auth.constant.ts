@@ -9,6 +9,6 @@ export const authOptions = {
   },
 };
 
-export enum ROUTING_KEY {
-  EMAIL_USER_SIGNUP = 'email.user.signup',
+export enum USER_EVENT {
+  SIGNUP = 'signup',
 }

@@ -7,12 +7,25 @@ import { Options } from 'amqplib';
 export class RabbitMqService {
   constructor(private readonly connection: AmqpConnection) {}
 
-  async publish<T = any>(
+  publishTo<T = any>(
     exchange: EXCHANGE_NAME,
     routingKey: string,
     message: T,
     options: Options.Publish = {},
   ) {
-    await this.connection.publish<T>(exchange, routingKey, message, options);
+    return this.connection.publish<T>(exchange, routingKey, message, options);
+  }
+
+  publish<T = any>(
+    routingKey: string,
+    message: T,
+    options: Options.Publish = {},
+  ) {
+    return this.publishTo<T>(
+      EXCHANGE_NAME.LMS_EVENT_BUS,
+      routingKey,
+      message,
+      options,
+    );
   }
 }

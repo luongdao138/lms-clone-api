@@ -1,23 +1,25 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { PasswordService } from '../password/password.service';
-import { UserService } from '../user/user.service';
-import { SignUpInput } from './dto/Signup.input';
-import { LoginInput } from './dto/Login.input';
-import { Auth } from 'src/graphql/models/Auth';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { Environment } from 'src/constants/env';
-import { pick } from 'lodash';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import { Redis } from 'ioredis';
-import { ROUTING_KEY, authOptions } from './auth.constant';
-import { JwtPayload, JwtSavedToken } from './auth.interface';
-import { TimeUtil } from 'src/utils/time.util';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UserProfileService } from '../user-profile/user-profile.service';
+import { HttpException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
+import { Redis } from 'ioredis';
+import { pick } from 'lodash';
+import { Environment } from 'src/constants/env';
+import { ModuleName } from 'src/constants/moduleNames';
+import { Auth } from 'src/graphql/models/Auth';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';
-import { EXCHANGE_NAME } from 'src/rabbitmq/rabbitmq.constant';
+import { generateRoutingKey } from 'src/rabbitmq/rabbitmq.util';
+import { TimeUtil } from 'src/utils/time.util';
+import { PasswordService } from '../password/password.service';
+import { UserProfileService } from '../user-profile/user-profile.service';
+import { UserService } from '../user/user.service';
+import { USER_EVENT, authOptions } from './auth.constant';
+import { JwtPayload, JwtSavedToken } from './auth.interface';
+import { LoginInput } from './dto/Login.input';
+import { SignUpInput } from './dto/Signup.input';
+import { UserSignupEvent } from './events/UserSignup.event';
 
 @Injectable()
 export class AuthService {
@@ -64,11 +66,8 @@ export class AuthService {
       );
 
       await this.rabbitMQService.publish(
-        EXCHANGE_NAME.EMAIL,
-        ROUTING_KEY.EMAIL_USER_SIGNUP,
-        {
-          ...user,
-        },
+        generateRoutingKey(ModuleName.USER, USER_EVENT.SIGNUP),
+        new UserSignupEvent(user),
       );
 
       return user;
