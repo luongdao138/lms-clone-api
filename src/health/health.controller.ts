@@ -5,6 +5,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
 import { Redis } from 'ioredis';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { RabbitMQHealthIndicator } from 'src/rabbitmq/rabbitmq.health';
 
 @Controller('health')
 @ApiTags('Health')
@@ -15,6 +16,7 @@ export class HealthController {
     protected prismaIndicator: PrismaHealthIndicator,
     protected readonly redisIndicator: RedisHealthIndicator,
     protected readonly prismaService: PrismaService,
+    protected readonly rabbitMQHeathIndicator: RabbitMQHealthIndicator,
   ) {}
 
   @Get('live')
@@ -35,6 +37,7 @@ export class HealthController {
         this.prismaIndicator.pingCheck('prisma', this.prismaService, {
           timeout: 2000,
         }),
+      () => this.rabbitMQHeathIndicator.check('rabbitmq'),
     ]);
   }
 }
