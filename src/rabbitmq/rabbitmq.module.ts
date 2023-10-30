@@ -1,20 +1,20 @@
 import { Module } from '@nestjs/common';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
-import { RabbitMqOptionsService } from 'src/nest/providers/RabbitMqOptions.service';
 import { RabbitMQHealthIndicator } from './rabbitmq.health';
+import { RabbitMqService } from './rabbitmq.service';
 
 @Module({
   imports: [
     RabbitMQModule.forRootAsync(RabbitMQModule, {
-      useClass: RabbitMqOptionsService,
+      useClass: RabbitMqService,
     }),
   ],
   exports: [
     RabbitMQModule.forRootAsync(RabbitMQModule, {
-      useClass: RabbitMqOptionsService,
+      useClass: RabbitMqService,
     }),
     RabbitMQHealthIndicator,
   ],
-  providers: [RabbitMQHealthIndicator],
+  providers: [RabbitMQHealthIndicator, RabbitMqService],
 })
 export class AppRabbitMQModule {}
