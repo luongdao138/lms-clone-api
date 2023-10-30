@@ -25,7 +25,6 @@ export const exchanges: RabbitMQExchangeConfig[] = [
   {
     name: EXCHANGE_NAME.EMAIL,
     type: EXCHANGE_TYPE.TOPIC,
-    createExchangeIfNotExists: true,
     options: {},
   },
 ];
