@@ -19,6 +19,7 @@ import {
   validationOptions,
 } from './nest/validators/env.validator';
 import { AppRabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AppRabbitMQModule } from './rabbitmq/rabbitmq.module';
     CoreModule,
     ScheduleModule.forRoot(),
     AppRabbitMQModule,
+    EmailModule,
   ],
   controllers: [],
   providers: [AppService, AppResolver],

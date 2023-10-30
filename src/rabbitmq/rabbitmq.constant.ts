@@ -8,8 +8,17 @@ export enum EXCHANGE_TYPE {
   FANOUT = 'fanout',
   HEADERS = 'headers',
 }
+
 export enum EXCHANGE_NAME {
   EMAIL = 'email',
+}
+
+export enum QUEUE_NAME {
+  EMAIL = 'email',
+}
+
+export enum BINDING_ROUTING_KEY {
+  EMAIL = 'email:#',
 }
 
 export const exchanges: RabbitMQExchangeConfig[] = [

@@ -8,3 +8,7 @@ export const authOptions = {
     whiteListRefreshTokenPrefix: 'WHITE_LIST_RT_',
   },
 };
+
+export enum ROUTING_KEY {
+  EMAIL_USER_SIGNUP = 'email.user.signup',
+}

@@ -10,12 +10,14 @@ import { Environment } from 'src/constants/env';
 import { pick } from 'lodash';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
-import { authOptions } from './auth.constant';
+import { ROUTING_KEY, authOptions } from './auth.constant';
 import { JwtPayload, JwtSavedToken } from './auth.interface';
 import { TimeUtil } from 'src/utils/time.util';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserProfileService } from '../user-profile/user-profile.service';
 import { User } from '@prisma/client';
+import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';
+import { EXCHANGE_NAME } from 'src/rabbitmq/rabbitmq.constant';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +29,7 @@ export class AuthService {
     private prisma: PrismaService,
     @InjectRedis() private readonly redis: Redis,
     private readonly userProfileService: UserProfileService,
+    private readonly rabbitMQService: RabbitMqService,
   ) {}
 
   async signup(payload: SignUpInput): Promise<User> {
@@ -58,6 +61,14 @@ export class AuthService {
           },
         },
         tx,
+      );
+
+      await this.rabbitMQService.publish(
+        EXCHANGE_NAME.EMAIL,
+        ROUTING_KEY.EMAIL_USER_SIGNUP,
+        {
+          ...user,
+        },
       );
 
       return user;

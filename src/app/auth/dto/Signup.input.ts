@@ -2,11 +2,13 @@ import { Field, InputType } from '@nestjs/graphql';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
+import { UserSignupRole } from 'src/graphql/enums/UserRole';
 
 @InputType()
 export class SignUpInput {
@@ -25,4 +27,8 @@ export class SignUpInput {
   @IsString()
   @IsOptional()
   username: string;
+
+  @Field(() => UserSignupRole)
+  @IsEnum(UserSignupRole, { always: true })
+  role: UserSignupRole;
 }

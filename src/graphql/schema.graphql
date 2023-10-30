@@ -46,11 +46,17 @@ type Query {
 input SignUpInput {
   email: String!
   password: String!
+  role: UserSignupRole!
   username: String
 }
 
 enum UserRole {
   ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum UserSignupRole {
   INSTRUCTOR
   STUDENT
 }

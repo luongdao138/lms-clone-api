@@ -1,26 +1,18 @@
-import { ModuleConfigFactory } from '@golevelup/nestjs-modules';
-import { RabbitMQConfig } from '@golevelup/nestjs-rabbitmq';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Environment } from 'src/constants/env';
-import { DEFAULT_CHANNEL, exchanges } from './rabbitmq.constant';
+import { EXCHANGE_NAME } from './rabbitmq.constant';
+import { Options } from 'amqplib';
 
 @Injectable()
-export class RabbitMqService implements ModuleConfigFactory<RabbitMQConfig> {
-  constructor(private readonly configService: ConfigService) {}
+export class RabbitMqService {
+  constructor(private readonly connection: AmqpConnection) {}
 
-  createModuleConfig(): RabbitMQConfig {
-    return {
-      uri: this.configService.getOrThrow<string>(Environment.RABBITMQ_URL),
-      connectionInitOptions: {
-        wait: false,
-      },
-      channels: {
-        [DEFAULT_CHANNEL]: {
-          default: true,
-        },
-      },
-      exchanges,
-    };
+  async publish<T = any>(
+    exchange: EXCHANGE_NAME,
+    routingKey: string,
+    message: T,
+    options: Options.Publish = {},
+  ) {
+    await this.connection.publish<T>(exchange, routingKey, message, options);
   }
 }

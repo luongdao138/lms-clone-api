@@ -1,11 +1,10 @@
-import { Module } from '@nestjs/common';
-import { HealthController } from './health.controller';
-import { TerminusModule } from '@nestjs/terminus';
 import { RedisHealthModule } from '@liaoliaots/nestjs-redis-health';
-import { AppRabbitMQModule } from 'src/rabbitmq/rabbitmq.module';
+import { Module } from '@nestjs/common';
+import { TerminusModule } from '@nestjs/terminus';
+import { HealthController } from './health.controller';
 
 @Module({
-  imports: [TerminusModule, RedisHealthModule, AppRabbitMQModule],
+  imports: [TerminusModule, RedisHealthModule],
   controllers: [HealthController],
   providers: [],
 })
