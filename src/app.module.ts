@@ -20,6 +20,7 @@ import {
 } from './nest/validators/env.validator';
 import { AppRabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { EmailModule } from './email/email.module';
+import { EmailOptionsService } from './nest/providers/EmailOptions.service';
 
 @Module({
   imports: [
@@ -44,7 +45,10 @@ import { EmailModule } from './email/email.module';
     CoreModule,
     ScheduleModule.forRoot(),
     AppRabbitMQModule,
-    EmailModule,
+    EmailModule.forRootAsync({
+      isGlobal: true,
+      useClass: EmailOptionsService,
+    }),
   ],
   controllers: [],
   providers: [AppService, AppResolver],

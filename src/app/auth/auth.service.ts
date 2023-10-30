@@ -6,7 +6,7 @@ import { User } from '@prisma/client';
 import { Redis } from 'ioredis';
 import { pick } from 'lodash';
 import { Environment } from 'src/constants/env';
-import { ModuleName } from 'src/constants/moduleNames';
+import { ModuleName } from 'src/constants/module-names';
 import { Auth } from 'src/graphql/models/Auth';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';

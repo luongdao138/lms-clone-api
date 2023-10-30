@@ -10,6 +10,10 @@ export const envValidatorSchema = Joi.object({
   [Environment.REDIS_HOST]: Joi.string().required(),
   [Environment.REDIS_PORT]: Joi.string().required(),
   [Environment.RABBITMQ_URL]: Joi.string().required(),
+  [Environment.EMAIL_FROM]: Joi.string().required(),
+  [Environment.EMAIL_HOST]: Joi.string().required(),
+  [Environment.EMAIL_PASS]: Joi.string().required(),
+  [Environment.EMAIL_USER]: Joi.string().required(),
 });
 
 export const validationOptions = {
