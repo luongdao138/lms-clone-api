@@ -29,6 +29,21 @@ services:
     networks:
       - lms
 
+  rabbitmq:
+    image: rabbitmq:3.12.6-management
+    restart: unless-stopped
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+      - rabbitmq_log:/var/log/rabbitmq/
+    networks:
+      - lms
+    environment:
+      - RABBITMQ_DEFAULT_USER=luongdao
+      - RABBITMQ_DEFAULT_PASS=123456789
+
   migrate:
     build:
       context: .
@@ -56,8 +71,13 @@ services:
     env_file:
       - .env.dev
     depends_on:
-      - migrate
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
     networks:
       - lms
     restart: unless-stopped
@@ -71,3 +91,5 @@ networks:
 volumes:
   mysql:
   redis:
+  rabbitmq_data:
+  rabbitmq_log:

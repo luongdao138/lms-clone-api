@@ -1,12 +1,15 @@
 import * as Joi from 'joi';
-import { NodeEnv } from 'src/constants/env';
+import { Environment, NodeEnv } from 'src/constants/env';
 
 export const envValidatorSchema = Joi.object({
-  NODE_ENV: Joi.valid(...Object.values(NodeEnv)).default('development'),
-  PORT: Joi.number().optional().default(2960),
-  DATABASE_URL: Joi.string().required(),
-  REDIS_HOST: Joi.string().required(),
-  REDIS_PORT: Joi.string().required(),
+  [Environment.NODE_ENV]: Joi.valid(...Object.values(NodeEnv)).default(
+    'development',
+  ),
+  [Environment.PORT]: Joi.number().optional().default(2960),
+  [Environment.DATABASE_URL]: Joi.string().required(),
+  [Environment.REDIS_HOST]: Joi.string().required(),
+  [Environment.REDIS_PORT]: Joi.string().required(),
+  [Environment.RABBITMQ_URL]: Joi.string().required(),
 });
 
 export const validationOptions = {

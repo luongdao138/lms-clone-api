@@ -41,6 +41,8 @@
     "@nestjs/terminus": "^10.1.1",
     "@prisma/client": "^5.5.0",
     "@types/bcryptjs": "^2.4.5",
+    "amqp-connection-manager": "^4.1.14",
+    "amqplib": "^0.10.3",
     "apollo-server-express": "^3.12.1",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
