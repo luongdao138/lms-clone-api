@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { RabbitMQHealthIndicator } from './rabbitmq.health';
-import { RabbitMqOptionsService } from './rabbitmq-options.service';
+import { RabbitMqOptionsService } from '../nest/providers/RabbitMqOptions.service';
 import { RabbitMqService } from './rabbitmq.service';
 
 @Global()

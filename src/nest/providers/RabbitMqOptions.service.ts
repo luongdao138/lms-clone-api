@@ -3,7 +3,7 @@ import { RabbitMQConfig } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from 'src/constants/env';
-import { DEFAULT_CHANNEL, exchanges } from './rabbitmq.constant';
+import { DEFAULT_CHANNEL, exchanges } from '../../rabbitmq/rabbitmq.constant';
 
 @Injectable()
 export class RabbitMqOptionsService
