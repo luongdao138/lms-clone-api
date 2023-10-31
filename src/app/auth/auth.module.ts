@@ -11,6 +11,7 @@ import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 import { JwtRefreshTokenStrategy } from './strategies/jwt-refresh-token.strategy';
 import { AuthCronService } from './auth-cron.service';
 import { UserProfileModule } from '../user-profile/user-profile.module';
+import { OtpModule } from '../otp/otp.module';
 
 @Module({
   imports: [
@@ -18,6 +19,14 @@ import { UserProfileModule } from '../user-profile/user-profile.module';
     UserModule,
     UserProfileModule,
     PassportModule,
+    OtpModule.register({
+      length: 6,
+      generateOptions: {
+        upperCaseAlphabets: false,
+        specialChars: false,
+        lowerCaseAlphabets: false,
+      },
+    }),
     JwtModule.register({}),
   ],
   providers: [

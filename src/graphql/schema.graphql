@@ -2,9 +2,13 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Auth {
+type GqlAuth {
   accessToken: String!
   refreshToken: String!
+}
+
+type GqlSignup {
+  token: String!
 }
 
 type GqlUser {
@@ -32,10 +36,10 @@ input LoginInput {
 }
 
 type Mutation {
-  login(data: LoginInput!): Auth!
-  refresh: Auth!
+  login(data: LoginInput!): GqlAuth!
+  refresh: GqlAuth!
   signout(refreshToken: String!): String!
-  signup(data: SignUpInput!): String!
+  signup(data: SignUpInput!): GqlSignup!
 }
 
 type Query {

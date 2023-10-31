@@ -7,7 +7,6 @@ import { Redis } from 'ioredis';
 import { pick } from 'lodash';
 import { Environment } from 'src/constants/env';
 import { ModuleName } from 'src/constants/module-names';
-import { Auth } from 'src/graphql/models/Auth';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';
 import { generateRoutingKey } from 'src/rabbitmq/rabbitmq.util';
@@ -20,6 +19,8 @@ import { JwtPayload, JwtSavedToken } from './auth.interface';
 import { LoginInput } from './dto/Login.input';
 import { SignUpInput } from './dto/Signup.input';
 import { UserSignupEvent } from './events/UserSignup.event';
+import { OtpService } from '../otp/otp.service';
+import { GqlAuth } from './dto/Auth.gql';
 
 @Injectable()
 export class AuthService {
@@ -32,9 +33,10 @@ export class AuthService {
     @InjectRedis() private readonly redis: Redis,
     private readonly userProfileService: UserProfileService,
     private readonly rabbitMQService: RabbitMqService,
+    private otpService: OtpService,
   ) {}
 
-  async signup(payload: SignUpInput): Promise<User> {
+  async signup(payload: SignUpInput) {
     return await this.prisma.$transaction(async (tx) => {
       const { email, password, ...rest } = payload;
       const existingUser = await this.userService.findUserByEmail(email, tx);
@@ -65,16 +67,21 @@ export class AuthService {
         tx,
       );
 
-      await this.rabbitMQService.publish(
-        generateRoutingKey(ModuleName.USER, USER_EVENT.SIGNUP),
-        new UserSignupEvent(user),
+      const otp = await this.otpService.createOtp(
+        { userId: user.id, expiresIn: authOptions.tokens.otpExpiresIn },
+        tx,
       );
 
-      return user;
+      await this.rabbitMQService.publish(
+        generateRoutingKey(ModuleName.USER, USER_EVENT.SIGNUP),
+        new UserSignupEvent(user, otp),
+      );
+
+      return { user, token: otp.otpToken };
     });
   }
 
-  async login(payload: LoginInput): Promise<Auth> {
+  async login(payload: LoginInput): Promise<GqlAuth> {
     const { email, password } = payload;
     const existingUser = await this.userService.findUserByEmail(email);
     if (!existingUser)
@@ -197,7 +204,7 @@ export class AuthService {
     await Promise.all(promises);
   }
 
-  async prepareAuthTokens(user: User): Promise<Auth> {
+  async prepareAuthTokens(user: User): Promise<GqlAuth> {
     const jwtPayload = this.generateJwtPayload(user);
     const accessToken = this.jwtService.sign(jwtPayload, {
       secret: this.configService.getOrThrow(Environment.ACCESS_TOKEN_SECRET),
