@@ -47,7 +47,10 @@ export class AuthService {
       let user: User;
 
       if (existingUser && existingUser.status === $Enums.UserStatus.ACTIVE) {
-        throw new HttpException('Email already exists', 422);
+        throw new HttpException(
+          'Email already exists',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
       } else if (existingUser) {
         user = existingUser;
       } else {
@@ -232,8 +235,6 @@ export class AuthService {
       this.retrieveJwtTokens(refreshTokenKey),
     ]);
 
-    const promises = [];
-
     const toDeleteAccessTokens = whiteListAccessTokens.filter(
       (rawToken) => !this.checkValidToken(rawToken),
     );
@@ -241,14 +242,16 @@ export class AuthService {
       (rawToken) => !this.checkValidToken(rawToken),
     );
 
+    const pipeline = this.redis.pipeline();
+
     if (toDeleteAccessTokens.length) {
-      promises.push(this.redis.srem(accessTokenKey, toDeleteAccessTokens));
+      pipeline.srem(accessTokenKey, toDeleteAccessTokens);
     }
     if (toDeleteRefreshTokens.length) {
-      promises.push(this.redis.srem(refreshTokenKey, toDeleteRefreshTokens));
+      pipeline.srem(refreshTokenKey, toDeleteRefreshTokens);
     }
 
-    await Promise.all(promises);
+    await pipeline.exec();
   }
 
   async prepareAuthTokens(user: User): Promise<GqlAuth> {
