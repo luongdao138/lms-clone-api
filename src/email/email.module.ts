@@ -1,13 +1,13 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { EmailService } from './email.service';
-import { EmailSubscriber } from './subscribers/email.subscriber';
+import { EmailConsumer } from './consumers/email.consumer';
 import { createAsyncProviders, createProvider } from './email.provider';
 import { EmailModuleAsyncOptions, EmailModuleOptions } from './email.inteface';
 
 @Module({})
 export class EmailModule {
   static forRoot(options: EmailModuleOptions): DynamicModule {
-    const providers = [...createProvider(options.mailOptions), EmailSubscriber];
+    const providers = [...createProvider(options.mailOptions), EmailConsumer];
     const exports = [EmailService];
 
     return {
@@ -22,7 +22,7 @@ export class EmailModule {
     const providers = [
       ...createAsyncProviders(options),
       ...(options.extraProviders ?? []),
-      EmailSubscriber,
+      EmailConsumer,
     ];
     const exports = [EmailService];
 
