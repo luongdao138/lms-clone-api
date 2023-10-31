@@ -15,7 +15,6 @@ export class EmailService implements OnModuleInit {
     private readonly mailTransportFactory: MailTransportFactory,
     private readonly handlebarsAdapter: HandlebarsAdapter,
   ) {
-    console.log(this.mailOptions);
     if (!mailOptions.transport) {
       throw new Error('Mail transport must be provided');
     }

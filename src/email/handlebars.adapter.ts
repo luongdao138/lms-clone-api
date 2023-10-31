@@ -8,9 +8,13 @@ import { get, set, unset } from 'lodash';
 
 @Injectable()
 export class HandlebarsAdapter {
-  constructor(
-    @Inject(MAIL_OPTIONS) private readonly mailOptions: MailOptions,
-  ) {}
+  constructor(@Inject(MAIL_OPTIONS) private readonly mailOptions: MailOptions) {
+    Handlebars.registerHelper('concat', (...args) => {
+      args.pop();
+      return args.join('');
+    });
+    Handlebars.registerHelper(mailOptions.handlebars?.helpers || {});
+  }
 
   // mail.options.template => templateId, mailOptions.template.dir => templateDir
   compile(mail: any, callback: any) {
@@ -28,23 +32,23 @@ export class HandlebarsAdapter {
       const templateContent = memoizeReadFile(templatePath, 'utf-8');
       const compiledContent = Handlebars.compile(
         templateContent,
-        get(this.mailOptions, ['template', 'options'], {}),
+        get(this.mailOptions, 'template.options', {}),
       );
 
       const runtimeOptions = get(
         this.mailOptions,
-        ['handlebars', 'runtimeOptions'],
+        'handlebars.runtimeOptions',
         { partials: undefined, data: {} },
       );
       const renderedContent = compiledContent(
-        get(mail, ['data', 'context'], {}),
+        get(mail, 'data.context', {}),
         runtimeOptions,
       );
 
-      set(mail, ['data', 'html'], renderedContent);
+      set(mail, 'data.html', renderedContent);
 
-      unset(mail, ['data', 'context']);
-      unset(mail, ['data', 'template']);
+      unset(mail, 'data.context');
+      unset(mail, 'data.template');
 
       return callback();
     } catch (error) {
