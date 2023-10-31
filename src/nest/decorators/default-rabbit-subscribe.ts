@@ -26,6 +26,9 @@ export const DefaultRabbitSubsribe = (config: RabbitSubscribeConfig) => {
     errorHandler() {
       // do nothing => just to override the requeue behavior
     },
+    queueOptions: {
+      durable: true,
+    },
   };
 
   return RabbitSubscribe(merge(defaultConfig, config));

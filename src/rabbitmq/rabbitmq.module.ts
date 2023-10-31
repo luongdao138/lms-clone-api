@@ -18,6 +18,6 @@ import { RabbitMqService } from './rabbitmq.service';
     RabbitMQHealthIndicator,
     RabbitMqService,
   ],
-  providers: [RabbitMQHealthIndicator, RabbitMqOptionsService, RabbitMqService],
+  providers: [RabbitMQHealthIndicator, RabbitMqService],
 })
 export class AppRabbitMQModule {}
