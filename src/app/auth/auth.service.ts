@@ -1,5 +1,5 @@
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { $Enums, User } from '@prisma/client';
@@ -21,7 +21,8 @@ import { SignUpInput } from './dto/Signup.input';
 import { UserSignupEvent } from './events/UserSignup.event';
 import { OtpService } from '../otp/otp.service';
 import { GqlAuth } from './dto/Auth.gql';
-import { PrismaClientTransaction } from 'src/types/common';
+import { PrismaClientTransaction, TimeUnit } from 'src/types/common';
+import { RateLimitingService } from 'src/nest/shared/rate-limit/rate-limiting.service';
 
 @Injectable()
 export class AuthService {
@@ -34,7 +35,8 @@ export class AuthService {
     @InjectRedis() private readonly redis: Redis,
     private readonly userProfileService: UserProfileService,
     private readonly rabbitMQService: RabbitMqService,
-    private otpService: OtpService,
+    private readonly otpService: OtpService,
+    private readonly rateLimitingService: RateLimitingService,
   ) {}
 
   async signup(payload: SignUpInput) {
@@ -50,6 +52,18 @@ export class AuthService {
         user = existingUser;
       } else {
         user = await this.signupNewUser(payload, tx);
+      }
+
+      // check rate limit
+      const exceedRateLimit = await this.rateLimitingService.bucket(
+        this.getOtpRateLimitKey(user.id),
+        { accessLimit: 20, timeUnit: TimeUnit.HOUR }, // 20 otps per hours
+      );
+      if (exceedRateLimit) {
+        throw new HttpException(
+          'Too many otp requests. Try again later',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
       }
 
       const activeOtp = await this.otpService.getActiveOtp(user.id, {}, tx);
@@ -125,6 +139,10 @@ export class AuthService {
 
       return user;
     });
+  }
+
+  getOtpRateLimitKey(userId: number) {
+    return `${userId}:signup:otp`;
   }
 
   async signout(userId: number, refreshToken: string, accessToken: string) {

@@ -13,3 +13,10 @@ export type PrismaClientTransaction = Omit<
 >;
 
 export type DateTime = string | number | Date | Dayjs;
+
+export enum TimeUnit {
+  DAY = 'd',
+  HOUR = 'h',
+  SECOND = 's',
+  MINUTE = 'm',
+}
