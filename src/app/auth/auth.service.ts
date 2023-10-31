@@ -2,7 +2,7 @@ import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { HttpException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { $Enums, User } from '@prisma/client';
 import { Redis } from 'ioredis';
 import { pick } from 'lodash';
 import { Environment } from 'src/constants/env';
@@ -21,6 +21,7 @@ import { SignUpInput } from './dto/Signup.input';
 import { UserSignupEvent } from './events/UserSignup.event';
 import { OtpService } from '../otp/otp.service';
 import { GqlAuth } from './dto/Auth.gql';
+import { PrismaClientTransaction } from 'src/types/common';
 
 @Injectable()
 export class AuthService {
@@ -38,39 +39,26 @@ export class AuthService {
 
   async signup(payload: SignUpInput) {
     return await this.prisma.$transaction(async (tx) => {
-      const { email, password, ...rest } = payload;
+      const { email } = payload;
       const existingUser = await this.userService.findUserByEmail(email, tx);
 
-      if (existingUser) throw new HttpException('Email already exists', 422);
-      const hashedPassword = await this.passwordService.hash(password);
+      let user: User;
 
-      // create new empty profile for user
-      const userProfile = await this.userProfileService.createProfile(
-        {
-          data: {},
-          select: {
-            id: true,
-          },
-        },
-        tx,
-      );
+      if (existingUser && existingUser.status === $Enums.UserStatus.ACTIVE) {
+        throw new HttpException('Email already exists', 422);
+      } else if (existingUser) {
+        user = existingUser;
+      } else {
+        user = await this.signupNewUser(payload, tx);
+      }
 
-      const user = await this.userService.createUser(
-        {
-          data: {
-            email,
-            password: hashedPassword,
-            profileId: userProfile.id,
-            ...rest,
-          },
-        },
-        tx,
-      );
-
-      const otp = await this.otpService.createOtp(
-        { userId: user.id, expiresIn: authOptions.tokens.otpExpiresIn },
-        tx,
-      );
+      const activeOtp = await this.otpService.getActiveOtp(user.id, {}, tx);
+      const otp =
+        activeOtp ||
+        (await this.otpService.createOtp(
+          { userId: user.id, expiresIn: authOptions.tokens.otpExpiresIn },
+          tx,
+        ));
 
       await this.rabbitMQService.publish(
         generateRoutingKey(ModuleName.USER, USER_EVENT.SIGNUP),
@@ -96,6 +84,47 @@ export class AuthService {
     }
 
     return this.prepareAuthTokens(existingUser);
+  }
+
+  async signupNewUser(payload: SignUpInput, tx?: PrismaClientTransaction) {
+    const wrapper = tx
+      ? async (callback: (prisma: PrismaClientTransaction) => Promise<User>) =>
+          await callback(tx)
+      : async (callback: (prisma: PrismaClientTransaction) => Promise<User>) =>
+          await this.prisma.$transaction(
+            async (transaction) => await callback(transaction),
+          );
+
+    return await wrapper(async (prismaInstance: PrismaClientTransaction) => {
+      const { email, password, ...rest } = payload;
+
+      const hashedPassword = await this.passwordService.hash(password);
+
+      // create new empty profile for user
+      const userProfile = await this.userProfileService.createProfile(
+        {
+          data: {},
+          select: {
+            id: true,
+          },
+        },
+        prismaInstance,
+      );
+
+      const user = await this.userService.createUser(
+        {
+          data: {
+            email,
+            password: hashedPassword,
+            profileId: userProfile.id,
+            ...rest,
+          },
+        },
+        prismaInstance,
+      );
+
+      return user;
+    });
   }
 
   async signout(userId: number, refreshToken: string, accessToken: string) {

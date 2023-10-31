@@ -3,9 +3,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { OTP_OPTIONS } from './otp.constant';
 import { OtpOptions } from './otp.interface';
 import { OtpService } from './otp.service';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [JwtModule.register({})],
+  imports: [JwtModule.register({}), UserModule],
 })
 export class OtpModule {
   static register(options: OtpOptions): DynamicModule {
