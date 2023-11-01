@@ -23,6 +23,8 @@ import { OtpService } from '../otp/otp.service';
 import { GqlAuth } from './dto/Auth.gql';
 import { PrismaClientTransaction, TimeUnit } from 'src/types/common';
 import { RateLimitingService } from 'src/nest/shared/rate-limit/rate-limiting.service';
+import { VerifyOtpInput } from './dto/VerifyOtp.input';
+import { GqlVerifyOtp } from './dto/VerifyOtp.gql';
 
 @Injectable()
 export class AuthService {
@@ -69,7 +71,11 @@ export class AuthService {
         );
       }
 
-      const activeOtp = await this.otpService.getActiveOtp(user.id, {}, tx);
+      const activeOtp = await this.otpService.getActiveOtp(
+        { userId: user.id },
+        {},
+        tx,
+      );
       const otp =
         activeOtp ||
         (await this.otpService.createOtp(
@@ -101,6 +107,23 @@ export class AuthService {
     }
 
     return this.prepareAuthTokens(existingUser);
+  }
+
+  async verifyOtp(payload: VerifyOtpInput): Promise<User | undefined> {
+    const { token, otp } = payload;
+
+    // validate token to get user id and user email
+    // get active otp of this user and compare if email token and otp = active otp or not
+    // if yes => delete otp, otherwise => return error
+    const { success, otp: activeOtp } = await this.otpService.verifyOtp(
+      otp,
+      token,
+    );
+    if (!success) {
+      return;
+    }
+
+    await this.otpService.deleteOtp({ where: { id: activeOtp.id } });
   }
 
   async signupNewUser(payload: SignUpInput, tx?: PrismaClientTransaction) {

@@ -47,6 +47,10 @@ type GqlUserProfile {
   lastname: String
 }
 
+type GqlVerifyOtp {
+  user: GqlUser!
+}
+
 input LoginInput {
   email: String!
   password: String!
@@ -63,6 +67,7 @@ type Query {
   getHello: String!
   healthReady: GqlHealth!
   me: GqlUser!
+  verifyOtp(data: VerifyOtpInput!): GqlVerifyOtp!
 }
 
 input SignUpInput {
@@ -87,4 +92,9 @@ enum UserStatus {
   ACTIVE
   BANNED
   PENDING
+}
+
+input VerifyOtpInput {
+  otp: String!
+  token: String!
 }

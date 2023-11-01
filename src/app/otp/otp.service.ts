@@ -4,13 +4,14 @@ import { PrismaClientTransaction } from 'src/types/common';
 import { TimeUtil } from 'src/utils/time.util';
 import { generate as generateOtp } from 'otp-generator';
 import { CreateOtpInput } from './otp.types';
-import { OtpOptions } from './otp.interface';
+import { OtpOptions, OtpPayload } from './otp.interface';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from 'src/constants/env';
 import { OTP_OPTIONS } from './otp.constant';
 import { UserService } from '../user/user.service';
-import { Prisma } from '@prisma/client';
+import { Otp, Prisma, User } from '@prisma/client';
+import { JwtPayload } from '../auth/auth.interface';
 
 @Injectable()
 export class OtpService {
@@ -38,13 +39,10 @@ export class OtpService {
       tx,
     );
 
-    const otpToken = this.jwtService.sign(
-      { id: user.id, email: user.email },
-      {
-        expiresIn: input.expiresIn,
-        secret: this.configService.getOrThrow(Environment.OTP_SECRET),
-      },
-    );
+    const otpToken = this.jwtService.sign(this.genOtpPayload(user), {
+      expiresIn: input.expiresIn,
+      secret: this.configService.getOrThrow(Environment.OTP_SECRET),
+    });
 
     return prismaInstance.otp.create({
       data: {
@@ -57,15 +55,51 @@ export class OtpService {
   }
 
   async getActiveOtp(
-    userId: number,
+    where: Prisma.OtpFindFirstArgs['where'],
     args: Omit<Prisma.OtpFindFirstArgs, 'where'> = {},
     tx?: PrismaClientTransaction,
   ) {
     const prismaInstance = tx ?? this.prisma;
 
     return prismaInstance.otp.findFirst({
-      where: { userId, expiresAt: { gt: new Date() } },
+      where: { ...where, expiresAt: { gt: new Date() } },
       ...args,
     });
+  }
+
+  async verifyOtp(
+    otp: string,
+    token: string,
+    tx?: PrismaClientTransaction,
+  ): Promise<{ success: boolean; otp: Otp | undefined }> {
+    let otpPayload: OtpPayload;
+
+    try {
+      otpPayload = await this.jwtService.verifyAsync<OtpPayload>(token, {
+        secret: this.configService.getOrThrow(Environment.OTP_SECRET),
+      });
+    } catch (error) {
+      return { success: false, otp: undefined };
+    }
+
+    const userId = otpPayload.id;
+    const activeOtp = await this.getActiveOtp(
+      { otpToken: token, otp, userId },
+      {},
+      tx,
+    );
+    if (!activeOtp) return { success: false, otp: undefined };
+
+    return { success: true, otp: activeOtp };
+  }
+
+  async deleteOtp(args: Prisma.OtpDeleteArgs, tx?: PrismaClientTransaction) {
+    const prismaInstance = tx ?? this.prisma;
+
+    return prismaInstance.otp.delete(args);
+  }
+
+  private genOtpPayload(user: User): OtpPayload {
+    return { id: user.id, email: user.email };
   }
 }

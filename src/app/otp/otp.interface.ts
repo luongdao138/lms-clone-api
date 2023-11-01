@@ -9,3 +9,8 @@ export interface OtpOptions {
   length: number;
   generateOptions?: GenerateOptions;
 }
+
+export interface OtpPayload {
+  id: number;
+  email: string;
+}

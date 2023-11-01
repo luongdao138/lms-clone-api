@@ -1,4 +1,9 @@
-import { UseFilters, UseGuards } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  UseFilters,
+  UseGuards,
+} from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AuthToken } from 'src/nest/decorators/auth-token.decorator';
 import { AuthUser } from 'src/nest/decorators/user.decorator';
@@ -16,6 +21,8 @@ import { GqlUser } from 'src/graphql/models/User.gql';
 import { User } from '@prisma/client';
 import { GqlSignup } from './dto/Signup.gql';
 import { GqlAuth } from './dto/Auth.gql';
+import { VerifyOtpArgs } from './dto/VerifyOtp.args';
+import { GqlVerifyOtp } from './dto/VerifyOtp.gql';
 
 @Resolver(() => GqlAuth)
 @UseFilters(GqlResolverExceptionsFilter)
@@ -31,6 +38,17 @@ export class AuthResolver {
 
     const { token } = await this.authService.signup(data);
     return { token };
+  }
+
+  @Public()
+  @Query(() => GqlVerifyOtp)
+  async verifyOtp(@Args() args: VerifyOtpArgs) {
+    const user = await this.authService.verifyOtp(args.data);
+    if (!user) {
+      throw new HttpException('Otp is invalid', HttpStatus.BAD_REQUEST);
+    }
+
+    return user;
   }
 
   @Public()
