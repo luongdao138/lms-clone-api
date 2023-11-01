@@ -124,6 +124,7 @@ export class AuthService {
     }
 
     await this.otpService.deleteOtp({ where: { id: activeOtp.id } });
+    return this.userService.findUser(activeOtp.userId);
   }
 
   async signupNewUser(payload: SignUpInput, tx?: PrismaClientTransaction) {

@@ -11,7 +11,7 @@ import { Environment } from 'src/constants/env';
 import { OTP_OPTIONS } from './otp.constant';
 import { UserService } from '../user/user.service';
 import { Otp, Prisma, User } from '@prisma/client';
-import { JwtPayload } from '../auth/auth.interface';
+import { PasswordService } from '../password/password.service';
 
 @Injectable()
 export class OtpService {
@@ -22,6 +22,7 @@ export class OtpService {
     @Inject(OTP_OPTIONS)
     private readonly options: OtpOptions,
     private readonly userService: UserService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   async createOtp(input: CreateOtpInput, tx?: PrismaClientTransaction) {
@@ -43,12 +44,13 @@ export class OtpService {
       expiresIn: input.expiresIn,
       secret: this.configService.getOrThrow(Environment.OTP_SECRET),
     });
+    const hashedOtp = await this.passwordService.hash(newOtp);
 
     return prismaInstance.otp.create({
       data: {
         userId: input.userId,
         expiresAt,
-        otp: newOtp,
+        otp: hashedOtp,
         otpToken,
       },
     });
@@ -84,13 +86,15 @@ export class OtpService {
 
     const userId = otpPayload.id;
     const activeOtp = await this.getActiveOtp(
-      { otpToken: token, otp, userId },
+      { otpToken: token, userId },
       {},
       tx,
     );
     if (!activeOtp) return { success: false, otp: undefined };
 
-    return { success: true, otp: activeOtp };
+    const isOtpMatch = await this.passwordService.verify(otp, activeOtp.otp);
+
+    return { success: isOtpMatch, otp: activeOtp };
   }
 
   async deleteOtp(args: Prisma.OtpDeleteArgs, tx?: PrismaClientTransaction) {
