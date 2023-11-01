@@ -1,6 +1,6 @@
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
-import { GqlUser } from 'src/graphql/models/User';
-import { GqlUserProfile } from 'src/graphql/models/UserProfile';
+import { GqlUser } from 'src/graphql/models/User.gql';
+import { GqlUserProfile } from 'src/graphql/models/UserProfile.gql';
 import { UserProfileService } from '../user-profile/user-profile.service';
 
 @Resolver(() => GqlUser)

@@ -14,6 +14,9 @@ export const envValidatorSchema = Joi.object({
   [Environment.EMAIL_HOST]: Joi.string().required(),
   [Environment.EMAIL_PASS]: Joi.string().required(),
   [Environment.EMAIL_USER]: Joi.string().required(),
+  [Environment.ACCESS_TOKEN_SECRET]: Joi.string().required(),
+  [Environment.OTP_SECRET]: Joi.string().required(),
+  [Environment.REFRESH_TOKEN_SECRET]: Joi.string().required(),
 });
 
 export const validationOptions = {

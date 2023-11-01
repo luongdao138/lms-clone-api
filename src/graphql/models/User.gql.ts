@@ -1,7 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { $Enums, User as PrismaUser } from '@prisma/client';
 import { Exclude } from 'class-transformer';
-import { GqlUserProfile } from './UserProfile';
+import { GqlUserProfile } from './UserProfile.gql';
 
 @ObjectType({
   isAbstract: true,

@@ -7,6 +7,15 @@ import { PrismaClientTransaction } from 'src/types/common';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findUser(
+    id: number,
+    args: Omit<Prisma.UserFindUniqueArgs, 'where'> = {},
+    tx?: PrismaClientTransaction,
+  ) {
+    const prismaInstance = tx ?? this.prisma;
+    return prismaInstance.user.findUnique({ where: { id }, ...args });
+  }
+
   async findUserByEmail(email: string, tx?: PrismaClientTransaction) {
     const prismaInstance = tx ?? this.prisma;
     return prismaInstance.user.findUnique({ where: { email } });

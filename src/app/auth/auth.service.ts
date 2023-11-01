@@ -1,13 +1,12 @@
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { $Enums, User } from '@prisma/client';
 import { Redis } from 'ioredis';
 import { pick } from 'lodash';
 import { Environment } from 'src/constants/env';
 import { ModuleName } from 'src/constants/module-names';
-import { Auth } from 'src/graphql/models/Auth';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';
 import { generateRoutingKey } from 'src/rabbitmq/rabbitmq.util';
@@ -20,6 +19,10 @@ import { JwtPayload, JwtSavedToken } from './auth.interface';
 import { LoginInput } from './dto/Login.input';
 import { SignUpInput } from './dto/Signup.input';
 import { UserSignupEvent } from './events/UserSignup.event';
+import { OtpService } from '../otp/otp.service';
+import { GqlAuth } from './dto/Auth.gql';
+import { PrismaClientTransaction, TimeUnit } from 'src/types/common';
+import { RateLimitingService } from 'src/nest/shared/rate-limit/rate-limiting.service';
 
 @Injectable()
 export class AuthService {
@@ -32,49 +35,58 @@ export class AuthService {
     @InjectRedis() private readonly redis: Redis,
     private readonly userProfileService: UserProfileService,
     private readonly rabbitMQService: RabbitMqService,
+    private readonly otpService: OtpService,
+    private readonly rateLimitingService: RateLimitingService,
   ) {}
 
-  async signup(payload: SignUpInput): Promise<User> {
+  async signup(payload: SignUpInput) {
     return await this.prisma.$transaction(async (tx) => {
-      const { email, password, ...rest } = payload;
+      const { email } = payload;
       const existingUser = await this.userService.findUserByEmail(email, tx);
 
-      if (existingUser) throw new HttpException('Email already exists', 422);
-      const hashedPassword = await this.passwordService.hash(password);
+      let user: User;
 
-      // create new empty profile for user
-      const userProfile = await this.userProfileService.createProfile(
-        {
-          data: {},
-          select: {
-            id: true,
-          },
-        },
-        tx,
-      );
+      if (existingUser && existingUser.status === $Enums.UserStatus.ACTIVE) {
+        throw new HttpException(
+          'Email already exists',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      } else if (existingUser) {
+        user = existingUser;
+      } else {
+        user = await this.signupNewUser(payload, tx);
+      }
 
-      const user = await this.userService.createUser(
-        {
-          data: {
-            email,
-            password: hashedPassword,
-            profileId: userProfile.id,
-            ...rest,
-          },
-        },
-        tx,
+      // check rate limit
+      const exceedRateLimit = await this.rateLimitingService.bucket(
+        this.getOtpRateLimitKey(user.id),
+        { accessLimit: 20, timeUnit: TimeUnit.HOUR }, // 20 otps per hours
       );
+      if (exceedRateLimit) {
+        throw new HttpException(
+          'Too many otp requests. Try again later',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
+      const activeOtp = await this.otpService.getActiveOtp(user.id, {}, tx);
+      const otp =
+        activeOtp ||
+        (await this.otpService.createOtp(
+          { userId: user.id, expiresIn: authOptions.tokens.otpExpiresIn },
+          tx,
+        ));
 
       await this.rabbitMQService.publish(
         generateRoutingKey(ModuleName.USER, USER_EVENT.SIGNUP),
-        new UserSignupEvent(user),
+        new UserSignupEvent(user, otp),
       );
 
-      return user;
+      return { user, token: otp.otpToken };
     });
   }
 
-  async login(payload: LoginInput): Promise<Auth> {
+  async login(payload: LoginInput): Promise<GqlAuth> {
     const { email, password } = payload;
     const existingUser = await this.userService.findUserByEmail(email);
     if (!existingUser)
@@ -89,6 +101,51 @@ export class AuthService {
     }
 
     return this.prepareAuthTokens(existingUser);
+  }
+
+  async signupNewUser(payload: SignUpInput, tx?: PrismaClientTransaction) {
+    const wrapper = tx
+      ? async (callback: (prisma: PrismaClientTransaction) => Promise<User>) =>
+          await callback(tx)
+      : async (callback: (prisma: PrismaClientTransaction) => Promise<User>) =>
+          await this.prisma.$transaction(
+            async (transaction) => await callback(transaction),
+          );
+
+    return await wrapper(async (prismaInstance: PrismaClientTransaction) => {
+      const { email, password, ...rest } = payload;
+
+      const hashedPassword = await this.passwordService.hash(password);
+
+      // create new empty profile for user
+      const userProfile = await this.userProfileService.createProfile(
+        {
+          data: {},
+          select: {
+            id: true,
+          },
+        },
+        prismaInstance,
+      );
+
+      const user = await this.userService.createUser(
+        {
+          data: {
+            email,
+            password: hashedPassword,
+            profileId: userProfile.id,
+            ...rest,
+          },
+        },
+        prismaInstance,
+      );
+
+      return user;
+    });
+  }
+
+  getOtpRateLimitKey(userId: number) {
+    return `${userId}:signup:otp`;
   }
 
   async signout(userId: number, refreshToken: string, accessToken: string) {
@@ -178,8 +235,6 @@ export class AuthService {
       this.retrieveJwtTokens(refreshTokenKey),
     ]);
 
-    const promises = [];
-
     const toDeleteAccessTokens = whiteListAccessTokens.filter(
       (rawToken) => !this.checkValidToken(rawToken),
     );
@@ -187,17 +242,19 @@ export class AuthService {
       (rawToken) => !this.checkValidToken(rawToken),
     );
 
+    const pipeline = this.redis.pipeline();
+
     if (toDeleteAccessTokens.length) {
-      promises.push(this.redis.srem(accessTokenKey, toDeleteAccessTokens));
+      pipeline.srem(accessTokenKey, toDeleteAccessTokens);
     }
     if (toDeleteRefreshTokens.length) {
-      promises.push(this.redis.srem(refreshTokenKey, toDeleteRefreshTokens));
+      pipeline.srem(refreshTokenKey, toDeleteRefreshTokens);
     }
 
-    await Promise.all(promises);
+    await pipeline.exec();
   }
 
-  async prepareAuthTokens(user: User): Promise<Auth> {
+  async prepareAuthTokens(user: User): Promise<GqlAuth> {
     const jwtPayload = this.generateJwtPayload(user);
     const accessToken = this.jwtService.sign(jwtPayload, {
       secret: this.configService.getOrThrow(Environment.ACCESS_TOKEN_SECRET),

@@ -1,6 +1,5 @@
 import { UseFilters, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Auth } from 'src/graphql/models/Auth';
 import { AuthToken } from 'src/nest/decorators/auth-token.decorator';
 import { AuthUser } from 'src/nest/decorators/user.decorator';
 import { GqlResolverExceptionsFilter } from 'src/nest/filters/gql-exception.filter';
@@ -13,26 +12,30 @@ import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 import { Public } from 'src/nest/decorators/public.decorator';
 import { Roles } from 'src/nest/decorators/role.decorator';
 import { ROLE_ALL } from 'src/constants/role';
-import { GqlUser } from 'src/graphql/models/User';
+import { GqlUser } from 'src/graphql/models/User.gql';
 import { User } from '@prisma/client';
+import { GqlSignup } from './dto/Signup.gql';
+import { GqlAuth } from './dto/Auth.gql';
 
-@Resolver(() => Auth)
+@Resolver(() => GqlAuth)
 @UseFilters(GqlResolverExceptionsFilter)
 export class AuthResolver {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Mutation(() => String)
-  async signup(@Args({ nullable: false }) args: SignUpArgs): Promise<string> {
+  @Mutation(() => GqlSignup)
+  async signup(
+    @Args({ nullable: false }) args: SignUpArgs,
+  ): Promise<GqlSignup> {
     const { data } = args;
 
-    await this.authService.signup(data);
-    return 'Success';
+    const { token } = await this.authService.signup(data);
+    return { token };
   }
 
   @Public()
-  @Mutation(() => Auth)
-  async login(@Args({ nullable: false }) args: LoginArgs): Promise<Auth> {
+  @Mutation(() => GqlAuth)
+  async login(@Args({ nullable: false }) args: LoginArgs): Promise<GqlAuth> {
     const { data } = args;
 
     const tokens = await this.authService.login(data);
@@ -58,12 +61,12 @@ export class AuthResolver {
     return 'Success';
   }
 
-  @Mutation(() => Auth, { name: 'refresh' })
+  @Mutation(() => GqlAuth, { name: 'refresh' })
   @UseGuards(GqlJwtRefreshTokenGuard)
   async refreshToken(
     @AuthUser() user: User,
     @AuthToken() token: string,
-  ): Promise<Auth> {
+  ): Promise<GqlAuth> {
     return this.authService.refreshAccessToken(user, token);
   }
 }

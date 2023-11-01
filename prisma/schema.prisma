@@ -64,11 +64,12 @@ model User {
   email    String
   password String?
   role     UserRole   @default(STUDENT)
-  status   UserStatus @default(ACTIVE)
+  status   UserStatus @default(PENDING)
 
   profileId Int                @unique
   profile   UserProfile        @relation(fields: [profileId], references: [id])
   courses   CourseInstructor[]
+  otps      Otp[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -78,6 +79,24 @@ model User {
   deletedBy Int?
 
   @@unique([email])
+}
+
+model Otp {
+  id Int @id @default(autoincrement())
+
+  otp       String
+  otpToken  String
+  expiresAt DateTime?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
 }
 
 model UserProfile {
