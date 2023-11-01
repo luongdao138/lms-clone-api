@@ -28,6 +28,7 @@ import { EmailOptionsService } from './nest/providers/EmailOptions.service';
       isGlobal: true,
       validationSchema: envValidatorSchema,
       validationOptions,
+      envFilePath: ['.env.dev', '.env'],
     }),
     ServeStaticModule.forRootAsync({
       useClass: ServeStaticOptionsService,
