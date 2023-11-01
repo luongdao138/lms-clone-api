@@ -6,6 +6,8 @@ import { Environment } from './constants/env';
 import { buildSwagger } from './swagger';
 import { PrismaExceptionFilter } from './nest/filters/prisma-exception.filter';
 
+declare const module: any;
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -31,6 +33,12 @@ async function bootstrap() {
       forbidUnknownValues: false,
     }),
   );
+
+  // hmr
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 
   // swagger
   await buildSwagger(app);
