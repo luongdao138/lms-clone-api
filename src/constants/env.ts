@@ -23,4 +23,5 @@ export enum Environment {
   EMAIL_USER = 'EMAIL_USER',
   EMAIL_PASS = 'EMAIL_PASS',
   EMAIL_FROM = 'EMAIL_FROM',
+  OTP_SECRET = 'OTP_SECRET',
 }
