@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
 import { join } from 'path';
 import { Environment } from 'src/constants/env';
+import { ApolloServerErrorCode } from 'src/graphql/errors/error-codes';
 
 @Injectable()
 export class GqlOptionsService implements GqlOptionsFactory {
@@ -24,6 +25,15 @@ export class GqlOptionsService implements GqlOptionsFactory {
         };
       },
       resolvers: {},
+      formatError(error) {
+        return {
+          message: error.message || 'Internal server error',
+          timestamp: error.extensions.timestamp || new Date(),
+          code:
+            error.extensions.code ||
+            ApolloServerErrorCode.INTERNAL_SERVER_ERROR,
+        };
+      },
     };
   }
 }

@@ -1,5 +1,5 @@
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { $Enums, User } from '@prisma/client';
@@ -7,6 +7,8 @@ import { Redis } from 'ioredis';
 import { pick } from 'lodash';
 import { Environment } from 'src/constants/env';
 import { ModuleName } from 'src/constants/module-names';
+import { GraphQLException } from 'src/graphql/errors/GraphQLError';
+import { ApolloServerErrorCode } from 'src/graphql/errors/error-codes';
 import { RateLimitingService } from 'src/nest/shared/rate-limit/rate-limiting.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';
@@ -48,9 +50,9 @@ export class AuthService {
       let user: User;
 
       if (existingUser && existingUser.status === $Enums.UserStatus.ACTIVE) {
-        throw new HttpException(
+        throw new GraphQLException(
           'Email already exists',
-          HttpStatus.UNPROCESSABLE_ENTITY,
+          ApolloServerErrorCode.BAD_REQUEST,
         );
       } else if (existingUser) {
         user = existingUser;
@@ -64,9 +66,9 @@ export class AuthService {
         { accessLimit: 20, timeUnit: TimeUnit.HOUR }, // 20 otps per hours
       );
       if (exceedRateLimit) {
-        throw new HttpException(
+        throw new GraphQLException(
           'Too many otp requests. Try again later',
-          HttpStatus.TOO_MANY_REQUESTS,
+          ApolloServerErrorCode.TOO_MANY_REQUESTS,
         );
       }
 
@@ -95,14 +97,20 @@ export class AuthService {
     const { email, password } = payload;
     const existingUser = await this.userService.findUserByEmail(email);
     if (!existingUser)
-      throw new HttpException('Email or password is not correct', 400);
+      throw new GraphQLException(
+        'Email or password is not correct',
+        ApolloServerErrorCode.BAD_REQUEST,
+      );
 
     const isPasswordMatch = await this.passwordService.verify(
       password,
       existingUser.password,
     );
     if (!isPasswordMatch) {
-      throw new HttpException('Email or password is not correct', 400);
+      throw new GraphQLException(
+        'Email or password is not correct',
+        ApolloServerErrorCode.BAD_REQUEST,
+      );
     }
 
     return this.prepareAuthTokens(existingUser);

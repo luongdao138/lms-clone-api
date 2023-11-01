@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import {
-  HealthCheckError,
-  HealthIndicator,
-  HealthIndicatorResult,
-} from '@nestjs/terminus';
+import { HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { GraphQLException } from 'src/graphql/errors/GraphQLError';
 
 @Injectable()
 export class RabbitMQHealthIndicator extends HealthIndicator {
@@ -20,6 +17,6 @@ export class RabbitMQHealthIndicator extends HealthIndicator {
       return result;
     }
 
-    throw new HealthCheckError('RabbitMQ is down', result);
+    throw new GraphQLException('RabbitMQ is down');
   }
 }

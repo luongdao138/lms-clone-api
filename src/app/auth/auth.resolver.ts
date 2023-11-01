@@ -1,31 +1,26 @@
-import {
-  HttpException,
-  HttpStatus,
-  UseFilters,
-  UseGuards,
-} from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { User } from '@prisma/client';
+import { ROLE_ALL } from 'src/constants/role';
+import { GraphQLException } from 'src/graphql/errors/GraphQLError';
+import { ApolloServerErrorCode } from 'src/graphql/errors/error-codes';
+import { GqlUser } from 'src/graphql/models/User.gql';
 import { AuthToken } from 'src/nest/decorators/auth-token.decorator';
+import { Public } from 'src/nest/decorators/public.decorator';
+import { Roles } from 'src/nest/decorators/role.decorator';
 import { AuthUser } from 'src/nest/decorators/user.decorator';
-import { GqlResolverExceptionsFilter } from 'src/nest/filters/gql-exception.filter';
 import { AuthService } from './auth.service';
+import { GqlAuth } from './dto/Auth.gql';
 import { LoginArgs } from './dto/Login.args';
 import { SignOutArgs } from './dto/Signout.args';
 import { SignUpArgs } from './dto/Signup.args';
-import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
-import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
-import { Public } from 'src/nest/decorators/public.decorator';
-import { Roles } from 'src/nest/decorators/role.decorator';
-import { ROLE_ALL } from 'src/constants/role';
-import { GqlUser } from 'src/graphql/models/User.gql';
-import { User } from '@prisma/client';
 import { GqlSignup } from './dto/Signup.gql';
-import { GqlAuth } from './dto/Auth.gql';
 import { VerifyOtpArgs } from './dto/VerifyOtp.args';
 import { GqlVerifyOtp } from './dto/VerifyOtp.gql';
+import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
+import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
 
 @Resolver(() => GqlAuth)
-@UseFilters(GqlResolverExceptionsFilter)
 export class AuthResolver {
   constructor(private readonly authService: AuthService) {}
 
@@ -45,9 +40,9 @@ export class AuthResolver {
   async verifyOtp(@Args() args: VerifyOtpArgs): Promise<{ user: User }> {
     const user = await this.authService.verifyOtp(args.data);
     if (!user) {
-      throw new HttpException(
+      throw new GraphQLException(
         'Otp or token is invalid',
-        HttpStatus.BAD_REQUEST,
+        ApolloServerErrorCode.BAD_REQUEST,
       );
     }
 

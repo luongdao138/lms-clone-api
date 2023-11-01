@@ -1,14 +1,16 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Environment } from 'src/constants/env';
-import { JwtPayload } from '../auth.interface';
-import { Request } from 'express';
-import { AuthService } from '../auth.service';
-import { authOptions } from '../auth.constant';
-import { UserService } from 'src/app/user/user.service';
 import { $Enums } from '@prisma/client';
+import { Request } from 'express';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { UserService } from 'src/app/user/user.service';
+import { Environment } from 'src/constants/env';
+import { GraphQLException } from 'src/graphql/errors/GraphQLError';
+import { ApolloServerErrorCode } from 'src/graphql/errors/error-codes';
+import { authOptions } from '../auth.constant';
+import { JwtPayload } from '../auth.interface';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class JwtRefreshTokenStrategy extends PassportStrategy(
@@ -47,7 +49,10 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
           this.authService.generateTokenKey(id, 'refresh'),
         ),
       ]);
-      throw new UnauthorizedException();
+      throw new GraphQLException(
+        'Unauthorized',
+        ApolloServerErrorCode.UNAUTHORIZED,
+      );
     }
 
     const user = await this.userService.getAuthUser({
@@ -55,7 +60,10 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
     });
 
     if (user.status !== $Enums.UserStatus.ACTIVE) {
-      throw new UnauthorizedException();
+      throw new GraphQLException(
+        'Unauthorized',
+        ApolloServerErrorCode.UNAUTHORIZED,
+      );
     }
 
     // enrich the req.user with whole user entity

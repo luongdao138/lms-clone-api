@@ -4,6 +4,7 @@ import { MAIL_OPTIONS } from './email.constant';
 import { ISendMailOptions, MailOptions } from './email.inteface';
 import { HandlebarsAdapter } from './handlebars.adapter';
 import { MailTransportFactory } from './mail-transport.factory';
+import { GraphQLException } from 'src/graphql/errors/GraphQLError';
 
 @Injectable()
 export class EmailService implements OnModuleInit {
@@ -16,7 +17,7 @@ export class EmailService implements OnModuleInit {
     private readonly handlebarsAdapter: HandlebarsAdapter,
   ) {
     if (!mailOptions.transport) {
-      throw new Error('Mail transport must be provided');
+      throw new GraphQLException('Mail transport must be provided');
     }
   }
 
@@ -27,7 +28,7 @@ export class EmailService implements OnModuleInit {
       }
 
       if (!mail.data.template) {
-        throw new Error('Email template must be provided');
+        throw new GraphQLException('Email template must be provided');
       }
 
       return this.handlebarsAdapter.compile(mail, callback);
