@@ -7,6 +7,23 @@ type GqlAuth {
   refreshToken: String!
 }
 
+type GqlHealth {
+  details: GqlHealthInfo!
+  errors: GqlHealthInfo
+  info: GqlHealthInfo!
+  status: String!
+}
+
+type GqlHealthInfo {
+  prisma: GqlHealthInfoDetail
+  rabbitmq: GqlHealthInfoDetail
+  redis: GqlHealthInfoDetail
+}
+
+type GqlHealthInfoDetail {
+  status: String!
+}
+
 type GqlSignup {
   token: String!
 }
@@ -44,6 +61,7 @@ type Mutation {
 
 type Query {
   getHello: String!
+  healthReady: GqlHealth!
   me: GqlUser!
 }
 

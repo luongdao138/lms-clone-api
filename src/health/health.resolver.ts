@@ -1,15 +1,14 @@
+import { Query, Resolver } from '@nestjs/graphql';
+import { GqlHealth } from './dto/health.gql';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { RedisHealthIndicator } from '@liaoliaots/nestjs-redis-health';
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
 import { HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
 import { Redis } from 'ioredis';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMQHealthIndicator } from 'src/rabbitmq/rabbitmq.health';
 
-@Controller('health')
-@ApiTags('Health')
-export class HealthController {
+@Resolver()
+export class HealthResolver {
   constructor(
     protected readonly healthService: HealthCheckService,
     @InjectRedis() protected readonly redis: Redis,
@@ -19,13 +18,8 @@ export class HealthController {
     protected readonly rabbitMQHeathIndicator: RabbitMQHealthIndicator,
   ) {}
 
-  @Get('live')
-  healthLive() {
-    return this.healthService.check([]);
-  }
-
-  @Get('ready')
-  async healthReady() {
+  @Query(() => GqlHealth)
+  healthReady() {
     return this.healthService.check([
       () =>
         this.redisIndicator.checkHealth('redis', {
