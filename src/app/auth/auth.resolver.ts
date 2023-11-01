@@ -42,13 +42,16 @@ export class AuthResolver {
 
   @Public()
   @Query(() => GqlVerifyOtp)
-  async verifyOtp(@Args() args: VerifyOtpArgs) {
+  async verifyOtp(@Args() args: VerifyOtpArgs): Promise<{ user: User }> {
     const user = await this.authService.verifyOtp(args.data);
     if (!user) {
-      throw new HttpException('Otp is invalid', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Otp or token is invalid',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    return user;
+    return { user };
   }
 
   @Public()

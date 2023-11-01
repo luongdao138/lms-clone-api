@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { $Enums, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientTransaction } from 'src/types/common';
 
@@ -38,5 +38,15 @@ export class UserService {
     });
 
     return user;
+  }
+
+  async activateUser(userId: number, tx?: PrismaClientTransaction) {
+    const prismaInstance = tx ?? this.prisma;
+
+    // temp update user status to active
+    await prismaInstance.user.update({
+      where: { id: userId },
+      data: { status: $Enums.UserStatus.ACTIVE },
+    });
   }
 }

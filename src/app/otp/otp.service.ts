@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientTransaction } from 'src/types/common';
 import { TimeUtil } from 'src/utils/time.util';
@@ -15,6 +15,8 @@ import { PasswordService } from '../password/password.service';
 
 @Injectable()
 export class OtpService {
+  private logger = new Logger(OtpService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -45,6 +47,9 @@ export class OtpService {
       secret: this.configService.getOrThrow(Environment.OTP_SECRET),
     });
     const hashedOtp = await this.passwordService.hash(newOtp);
+
+    // for debug only
+    this.logger.debug(`Generate new OTP: ${newOtp}`);
 
     return prismaInstance.otp.create({
       data: {

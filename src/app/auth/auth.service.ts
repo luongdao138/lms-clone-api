@@ -7,24 +7,23 @@ import { Redis } from 'ioredis';
 import { pick } from 'lodash';
 import { Environment } from 'src/constants/env';
 import { ModuleName } from 'src/constants/module-names';
+import { RateLimitingService } from 'src/nest/shared/rate-limit/rate-limiting.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';
 import { generateRoutingKey } from 'src/rabbitmq/rabbitmq.util';
+import { PrismaClientTransaction, TimeUnit } from 'src/types/common';
 import { TimeUtil } from 'src/utils/time.util';
+import { OtpService } from '../otp/otp.service';
 import { PasswordService } from '../password/password.service';
 import { UserProfileService } from '../user-profile/user-profile.service';
 import { UserService } from '../user/user.service';
 import { USER_EVENT, authOptions } from './auth.constant';
 import { JwtPayload, JwtSavedToken } from './auth.interface';
+import { GqlAuth } from './dto/Auth.gql';
 import { LoginInput } from './dto/Login.input';
 import { SignUpInput } from './dto/Signup.input';
-import { UserSignupEvent } from './events/UserSignup.event';
-import { OtpService } from '../otp/otp.service';
-import { GqlAuth } from './dto/Auth.gql';
-import { PrismaClientTransaction, TimeUnit } from 'src/types/common';
-import { RateLimitingService } from 'src/nest/shared/rate-limit/rate-limiting.service';
 import { VerifyOtpInput } from './dto/VerifyOtp.input';
-import { GqlVerifyOtp } from './dto/VerifyOtp.gql';
+import { UserSignupEvent } from './events/UserSignup.event';
 
 @Injectable()
 export class AuthService {
@@ -110,21 +109,27 @@ export class AuthService {
   }
 
   async verifyOtp(payload: VerifyOtpInput): Promise<User | undefined> {
-    const { token, otp } = payload;
+    return this.prisma.$transaction(async (tx) => {
+      const { token, otp } = payload;
 
-    // validate token to get user id and user email
-    // get active otp of this user and compare if email token and otp = active otp or not
-    // if yes => delete otp, otherwise => return error
-    const { success, otp: activeOtp } = await this.otpService.verifyOtp(
-      otp,
-      token,
-    );
-    if (!success) {
-      return;
-    }
+      const { success, otp: activeOtp } = await this.otpService.verifyOtp(
+        otp,
+        token,
+        tx,
+      );
+      if (!success) {
+        return;
+      }
 
-    await this.otpService.deleteOtp({ where: { id: activeOtp.id } });
-    return this.userService.findUser(activeOtp.userId);
+      const { id: otpId, userId } = activeOtp;
+
+      await Promise.all([
+        this.otpService.deleteOtp({ where: { id: otpId } }, tx),
+        this.userService.activateUser(userId, tx),
+      ]);
+
+      return this.userService.findUser(userId, {}, tx);
+    });
   }
 
   async signupNewUser(payload: SignUpInput, tx?: PrismaClientTransaction) {
