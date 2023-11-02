@@ -111,4 +111,12 @@ export class OtpService {
   private genOtpPayload(user: User): OtpPayload {
     return { id: user.id, email: user.email };
   }
+
+  async deleteExpiredOtps(tx?: PrismaClientTransaction) {
+    const prismaInstance = tx ?? this.prisma;
+
+    return prismaInstance.otp.deleteMany({
+      where: { expiresAt: { lte: new Date() } },
+    });
+  }
 }

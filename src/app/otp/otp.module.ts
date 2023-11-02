@@ -5,9 +5,11 @@ import { OtpOptions } from './otp.interface';
 import { OtpService } from './otp.service';
 import { UserModule } from '../user/user.module';
 import { PasswordModule } from '../password/password.module';
+import { OtpCronService } from './otp-cron.service';
 
 @Module({
   imports: [JwtModule.register({}), UserModule, PasswordModule.register()],
+  providers: [OtpCronService],
 })
 export class OtpModule {
   static register(options: OtpOptions): DynamicModule {
