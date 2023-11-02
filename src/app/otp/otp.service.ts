@@ -12,6 +12,7 @@ import { OTP_OPTIONS } from './otp.constant';
 import { UserService } from '../user/user.service';
 import { Otp, Prisma, User } from '@prisma/client';
 import { PasswordService } from '../password/password.service';
+import { isDev } from 'src/utils/env';
 
 @Injectable()
 export class OtpService {
@@ -49,9 +50,11 @@ export class OtpService {
     const hashedOtp = await this.passwordService.hash(newOtp);
 
     // for debug only
-    this.logger.debug(`Generate new OTP: ${newOtp}`);
+    if (isDev) {
+      this.logger.debug(`Generate new OTP: ${newOtp}`);
+    }
 
-    return prismaInstance.otp.create({
+    const savedOtp = await prismaInstance.otp.create({
       data: {
         userId: input.userId,
         expiresAt,
@@ -59,6 +62,11 @@ export class OtpService {
         otpToken,
       },
     });
+
+    return {
+      otp: savedOtp,
+      rawOtp: newOtp,
+    };
   }
 
   async getActiveOtp(

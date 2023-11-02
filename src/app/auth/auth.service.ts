@@ -77,12 +77,18 @@ export class AuthService {
         {},
         tx,
       );
-      const otp =
-        activeOtp ||
-        (await this.otpService.createOtp(
-          { userId: user.id, expiresIn: authOptions.tokens.otpExpiresIn },
-          tx,
-        ));
+
+      // remove current active otp
+      if (activeOtp) {
+        await this.otpService.deleteOtp({ where: { id: activeOtp.id } }, tx);
+      }
+      const { otp, rawOtp } = await this.otpService.createOtp(
+        { userId: user.id, expiresIn: authOptions.tokens.otpExpiresIn },
+        tx,
+      );
+
+      // get the raw otp to send email
+      otp.otp = rawOtp;
 
       await this.rabbitMQService.publish(
         generateRoutingKey(ModuleName.USER, USER_EVENT.SIGNUP),
