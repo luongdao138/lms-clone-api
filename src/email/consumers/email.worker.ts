@@ -28,7 +28,7 @@ export class EmailWorker {
       context: {
         otp: otp.otp,
         email: user.email,
-        expiresIn: TimeUtil.diff(new Date(), otp.expiresAt, 'minute'),
+        expiresIn: TimeUtil.diff(otp.createdAt, otp.expiresAt, 'minute'),
       },
     });
   }

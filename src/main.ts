@@ -3,10 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Environment } from './constants/env';
-import { buildSwagger } from './swagger';
 import { classValidatorErrorsFactory } from './graphql/errors/format-validation-error';
 import { ErrorHandlingInterceptor } from './nest/interceptors/error-handling.interceptor';
 import { LoggingInterceptor } from './nest/interceptors/logging.interceptor';
+import { buildSwagger } from './swagger';
 
 declare const module: any;
 async function bootstrap() {

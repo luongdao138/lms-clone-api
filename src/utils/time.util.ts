@@ -17,6 +17,6 @@ export const TimeUtil = {
     day2: DateTime,
     unit?: dayjs.QUnitType | dayjs.OpUnitType,
   ) {
-    return dayjs(day1).diff(day2, unit);
+    return Math.abs(dayjs(day1).diff(day2, unit));
   },
 };

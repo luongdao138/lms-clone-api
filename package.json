@@ -6,8 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "rm -rf dist && nest build",
+    "build": "rm -rf dist && nest build && yarn copy:assets",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "copy:assets": "cp -rv src/assets/ dist/assets",
     "start": "nest start",
     "start:dev": "nodemon",
     "start:debug": "nest start --debug --watch",

@@ -5,7 +5,6 @@ import {
   generateQueueName,
   generateBindingKey,
 } from 'src/rabbitmq/rabbitmq.util';
-import { EmailService } from '../email.service';
 import { DefaultRabbitSubsribe } from 'src/nest/decorators/default-rabbit-subscribe';
 import { EmailWorker } from './email.worker';
 
