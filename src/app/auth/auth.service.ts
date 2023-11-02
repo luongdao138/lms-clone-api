@@ -49,7 +49,7 @@ export class AuthService {
 
       let user: User;
 
-      if (existingUser && existingUser.status === $Enums.UserStatus.ACTIVE) {
+      if (existingUser && this.userService.isUserActive(existingUser)) {
         throw new GraphQLException(
           'Email already exists',
           ApolloServerErrorCode.BAD_REQUEST,
@@ -96,7 +96,7 @@ export class AuthService {
   async login(payload: LoginInput): Promise<GqlAuth> {
     const { email, password } = payload;
     const existingUser = await this.userService.findUserByEmail(email);
-    if (!existingUser)
+    if (!existingUser || !this.userService.isUserActive(existingUser))
       throw new GraphQLException(
         'Email or password is not correct',
         ApolloServerErrorCode.BAD_REQUEST,

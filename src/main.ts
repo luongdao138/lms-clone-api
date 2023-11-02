@@ -6,6 +6,7 @@ import { Environment } from './constants/env';
 import { buildSwagger } from './swagger';
 import { classValidatorErrorsFactory } from './graphql/errors/format-validation-error';
 import { ErrorHandlingInterceptor } from './nest/interceptors/error-handling.interceptor';
+import { LoggingInterceptor } from './nest/interceptors/logging.interceptor';
 
 declare const module: any;
 async function bootstrap() {
@@ -46,6 +47,7 @@ async function bootstrap() {
 
   // interceptors
   app.useGlobalInterceptors(new ErrorHandlingInterceptor());
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   await app.listen(port);
 }

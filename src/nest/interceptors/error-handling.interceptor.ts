@@ -22,7 +22,7 @@ export class ErrorHandlingInterceptor implements NestInterceptor {
   ): Observable<any> {
     return next.handle().pipe(
       timeout({
-        each: 1000,
+        each: 100 * 1000, // 100 seconds
         with: () =>
           throwError(
             () =>

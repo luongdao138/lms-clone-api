@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { $Enums, Prisma } from '@prisma/client';
+import { $Enums, Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientTransaction } from 'src/types/common';
 
@@ -48,5 +48,9 @@ export class UserService {
       where: { id: userId },
       data: { status: $Enums.UserStatus.ACTIVE },
     });
+  }
+
+  isUserActive(user: User) {
+    return user?.status === $Enums.UserStatus.ACTIVE;
   }
 }
