@@ -4,6 +4,6 @@ import { Otp, User } from '@prisma/client';
 
 export class UserSignupEvent extends BaseEvent {
   constructor(public user: User, public otp: Otp) {
-    super(USER_EVENT.SIGNUP);
+    super(USER_EVENT.SIGNUP, { user, otp });
   }
 }

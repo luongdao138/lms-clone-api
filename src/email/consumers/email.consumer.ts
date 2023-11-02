@@ -7,10 +7,11 @@ import {
 } from 'src/rabbitmq/rabbitmq.util';
 import { EmailService } from '../email.service';
 import { DefaultRabbitSubsribe } from 'src/nest/decorators/default-rabbit-subscribe';
+import { EmailWorker } from './email.worker';
 
 @Injectable()
 export class EmailConsumer {
-  constructor(private readonly emailService: EmailService) {}
+  constructor(private readonly emailWorker: EmailWorker) {}
 
   private logger = new Logger(EmailConsumer.name);
 
@@ -23,6 +24,8 @@ export class EmailConsumer {
       `Email module consume user events: ===> ${JSON.stringify(msg)}`,
       amqpMsg.fields.routingKey,
     );
+
+    await this.emailWorker.handleEmailEvents(msg.eventName, msg.data);
   }
 
   @DefaultRabbitSubsribe({
@@ -34,5 +37,7 @@ export class EmailConsumer {
       `Email module consume order events: ===> ${JSON.stringify(msg)}`,
       amqpMsg.fields.routingKey,
     );
+
+    await this.emailWorker.handleEmailEvents(msg.eventName, msg.data);
   }
 }

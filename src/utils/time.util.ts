@@ -12,4 +12,11 @@ export const TimeUtil = {
   ) {
     return dayjs(from).add(value, unit);
   },
+  diff(
+    day1: DateTime,
+    day2: DateTime,
+    unit?: dayjs.QUnitType | dayjs.OpUnitType,
+  ) {
+    return dayjs(day1).diff(day2, unit);
+  },
 };
