@@ -5,10 +5,9 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { Observable, throwError, catchError } from 'rxjs';
+import { Observable, throwError, catchError, timeout } from 'rxjs';
 import { GraphQLException } from 'src/graphql/errors/GraphQLError';
 import { ApolloServerErrorCode } from 'src/graphql/errors/error-codes';
-
 @Injectable()
 export class ErrorHandlingInterceptor implements NestInterceptor {
   private errorCodesStatusMapping = {
@@ -22,6 +21,17 @@ export class ErrorHandlingInterceptor implements NestInterceptor {
     next: CallHandler<any>,
   ): Observable<any> {
     return next.handle().pipe(
+      timeout({
+        each: 1000,
+        with: () =>
+          throwError(
+            () =>
+              new GraphQLException(
+                'API Timeout',
+                ApolloServerErrorCode.REQUEST_TIMEOUT,
+              ),
+          ),
+      }),
       catchError((err) => {
         // handle errors here => try to convert to graphql error
         if (err instanceof PrismaClientKnownRequestError) {
