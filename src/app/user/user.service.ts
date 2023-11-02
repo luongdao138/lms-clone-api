@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { $Enums, Prisma, User } from '@prisma/client';
+import { TransactionBaseService } from 'src/nest/shared/transaction-base.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientTransaction } from 'src/types/common';
 
 @Injectable()
-export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+export class UserService extends TransactionBaseService {
+  constructor(protected readonly prisma: PrismaService) {
+    super(prisma);
+  }
 
   async findUser(
     id: number,

@@ -13,20 +13,23 @@ import { UserService } from '../user/user.service';
 import { Otp, Prisma, User } from '@prisma/client';
 import { PasswordService } from '../password/password.service';
 import { isDev } from 'src/utils/env';
+import { TransactionBaseService } from 'src/nest/shared/transaction-base.service';
 
 @Injectable()
-export class OtpService {
+export class OtpService extends TransactionBaseService {
   private logger = new Logger(OtpService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    protected readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private configService: ConfigService,
     @Inject(OTP_OPTIONS)
     private readonly options: OtpOptions,
     private readonly userService: UserService,
     private readonly passwordService: PasswordService,
-  ) {}
+  ) {
+    super(prisma);
+  }
 
   async createOtp(input: CreateOtpInput, tx?: PrismaClientTransaction) {
     const prismaInstance = tx ?? this.prisma;
