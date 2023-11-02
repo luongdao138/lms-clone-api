@@ -119,4 +119,24 @@ export class OtpService {
       where: { expiresAt: { lte: new Date() } },
     });
   }
+
+  async verifyOtpToken(
+    token: string,
+    tx?: PrismaClientTransaction,
+  ): Promise<boolean> {
+    try {
+      await this.jwtService.verifyAsync<OtpPayload>(token, {
+        secret: this.configService.getOrThrow(Environment.OTP_SECRET),
+      });
+    } catch (error) {
+      return false;
+    }
+
+    const activeOtp = await this.getActiveOtp(
+      { otpToken: token },
+      { select: { id: true } },
+      tx,
+    );
+    return !!activeOtp;
+  }
 }

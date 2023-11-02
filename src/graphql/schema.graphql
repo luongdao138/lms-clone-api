@@ -2,6 +2,10 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input CheckOtpTokenInput {
+  token: String!
+}
+
 type GqlAuth {
   accessToken: String!
   refreshToken: String!
@@ -22,6 +26,10 @@ type GqlHealthInfo {
 
 type GqlHealthInfoDetail {
   status: String!
+}
+
+type GqlResult {
+  success: Boolean!
 }
 
 type GqlSignup {
@@ -64,6 +72,7 @@ type Mutation {
 }
 
 type Query {
+  checkOtpToken(data: CheckOtpTokenInput!): GqlResult!
   getHello: String!
   healthReady: GqlHealth!
   me: GqlUser!

@@ -19,10 +19,16 @@ import { VerifyOtpArgs } from './dto/VerifyOtp.args';
 import { GqlVerifyOtp } from './dto/VerifyOtp.gql';
 import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
+import { CheckOtpTokenArgs } from './dto/CheckOtpToken.args';
+import { GqlResult } from 'src/graphql/models/Result';
+import { OtpService } from '../otp/otp.service';
 
 @Resolver(() => GqlAuth)
 export class AuthResolver {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly otpService: OtpService,
+  ) {}
 
   @Public()
   @Mutation(() => GqlSignup)
@@ -47,6 +53,16 @@ export class AuthResolver {
     }
 
     return { user };
+  }
+
+  @Public()
+  @Query(() => GqlResult)
+  async checkOtpToken(@Args() args: CheckOtpTokenArgs) {
+    const isTokenValid = await this.otpService.verifyOtpToken(args.data.token);
+
+    return {
+      success: isTokenValid,
+    };
   }
 
   @Public()
