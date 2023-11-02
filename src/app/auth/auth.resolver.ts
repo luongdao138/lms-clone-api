@@ -20,7 +20,7 @@ import { GqlVerifyOtp } from './dto/VerifyOtp.gql';
 import { GqlJwtRefreshTokenGuard } from './guards/gql-jwt-refresh-token.guard';
 import { GqlJwtAuthGuard } from './guards/gql-jwt.guard';
 import { CheckOtpTokenArgs } from './dto/CheckOtpToken.args';
-import { GqlResult } from 'src/graphql/models/Result';
+import { GqlResult } from 'src/graphql/models/Result.gql';
 import { OtpService } from '../otp/otp.service';
 
 @Resolver(() => GqlAuth)
