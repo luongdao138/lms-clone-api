@@ -3,16 +3,18 @@ import { EmailService } from './email.service';
 import { EmailConsumer } from './consumers/email.consumer';
 import { createAsyncProviders, createProvider } from './email.provider';
 import { EmailModuleAsyncOptions, EmailModuleOptions } from './email.inteface';
+import { EmailWorker } from './consumers/email.worker';
 
-@Module({})
+@Module({
+  providers: [EmailConsumer, EmailWorker],
+  exports: [EmailService],
+})
 export class EmailModule {
   static forRoot(options: EmailModuleOptions): DynamicModule {
-    const providers = [...createProvider(options.mailOptions), EmailConsumer];
-    const exports = [EmailService];
+    const providers = [...createProvider(options.mailOptions)];
 
     return {
       module: EmailModule,
-      exports,
       providers,
       global: options.isGlobal,
     };
@@ -22,16 +24,13 @@ export class EmailModule {
     const providers = [
       ...createAsyncProviders(options),
       ...(options.extraProviders ?? []),
-      EmailConsumer,
     ];
-    const exports = [EmailService];
 
     return {
       module: EmailModule,
       global: options.isGlobal,
       imports: options.imports ?? [],
       providers,
-      exports,
     };
   }
 }

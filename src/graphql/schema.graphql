@@ -2,9 +2,38 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Auth {
+input CheckOtpTokenInput {
+  token: String!
+}
+
+type GqlAuth {
   accessToken: String!
   refreshToken: String!
+}
+
+type GqlHealth {
+  details: GqlHealthInfo!
+  errors: GqlHealthInfo
+  info: GqlHealthInfo!
+  status: String!
+}
+
+type GqlHealthInfo {
+  prisma: GqlHealthInfoDetail
+  rabbitmq: GqlHealthInfoDetail
+  redis: GqlHealthInfoDetail
+}
+
+type GqlHealthInfoDetail {
+  status: String!
+}
+
+type GqlResult {
+  success: Boolean!
+}
+
+type GqlSignup {
+  token: String!
 }
 
 type GqlUser {
@@ -26,21 +55,29 @@ type GqlUserProfile {
   lastname: String
 }
 
+type GqlVerifyOtp {
+  user: GqlUser!
+}
+
 input LoginInput {
   email: String!
   password: String!
 }
 
 type Mutation {
-  login(data: LoginInput!): Auth!
-  refresh: Auth!
+  login(data: LoginInput!): GqlAuth!
+  refresh: GqlAuth!
+  resendOtp(data: CheckOtpTokenInput!): GqlSignup!
   signout(refreshToken: String!): String!
-  signup(data: SignUpInput!): String!
+  signup(data: SignUpInput!): GqlSignup!
 }
 
 type Query {
+  checkOtpToken(data: CheckOtpTokenInput!): GqlResult!
   getHello: String!
+  healthReady: GqlHealth!
   me: GqlUser!
+  verifyOtp(data: VerifyOtpInput!): GqlVerifyOtp!
 }
 
 input SignUpInput {
@@ -65,4 +102,9 @@ enum UserStatus {
   ACTIVE
   BANNED
   PENDING
+}
+
+input VerifyOtpInput {
+  otp: String!
+  token: String!
 }

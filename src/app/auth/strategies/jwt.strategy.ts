@@ -1,15 +1,17 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import { $Enums } from '@prisma/client';
 import { Request } from 'express';
+import { omit } from 'lodash';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserService } from 'src/app/user/user.service';
 import { Environment } from 'src/constants/env';
-import { AuthService } from '../auth.service';
-import { JwtPayload } from '../auth.interface';
-import { omit } from 'lodash';
+import { GraphQLException } from 'src/graphql/errors/GraphQLError';
+import { ApolloServerErrorCode } from 'src/graphql/errors/error-codes';
 import { authOptions } from '../auth.constant';
-import { $Enums } from '@prisma/client';
+import { JwtPayload } from '../auth.interface';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -38,7 +40,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
 
     if (!isValid) {
-      throw new UnauthorizedException();
+      throw new GraphQLException(
+        'Unauthorized',
+        ApolloServerErrorCode.UNAUTHORIZED,
+      );
     }
 
     // enrich the req.user with whole user entity
@@ -47,7 +52,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
 
     if (user.status !== $Enums.UserStatus.ACTIVE) {
-      throw new UnauthorizedException();
+      throw new GraphQLException(
+        'Unauthorized',
+        ApolloServerErrorCode.UNAUTHORIZED,
+      );
     }
 
     return omit(user, ['password']);

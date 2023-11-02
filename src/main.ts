@@ -1,11 +1,14 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Environment } from './constants/env';
+import { classValidatorErrorsFactory } from './graphql/errors/format-validation-error';
+import { ErrorHandlingInterceptor } from './nest/interceptors/error-handling.interceptor';
+import { LoggingInterceptor } from './nest/interceptors/logging.interceptor';
 import { buildSwagger } from './swagger';
-import { PrismaExceptionFilter } from './nest/filters/prisma-exception.filter';
 
+declare const module: any;
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -29,15 +32,22 @@ async function bootstrap() {
       transform: true,
       whitelist: true,
       forbidUnknownValues: false,
+      exceptionFactory: classValidatorErrorsFactory,
     }),
   );
+
+  // hmr
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 
   // swagger
   await buildSwagger(app);
 
-  // exeption filters
-  const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new PrismaExceptionFilter(httpAdapter));
+  // interceptors
+  app.useGlobalInterceptors(new ErrorHandlingInterceptor());
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   await app.listen(port);
 }

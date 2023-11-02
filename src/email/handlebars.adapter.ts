@@ -19,7 +19,8 @@ export class HandlebarsAdapter {
   // mail.options.template => templateId, mailOptions.template.dir => templateDir
   compile(mail: any, callback: any) {
     const templateDir =
-      this.mailOptions.template.dir || path.join(__dirname, 'templates');
+      this.mailOptions.template.dir ||
+      path.join(__dirname, '../assets', 'templates');
     const templateId = mail.data.template;
     const templateExt = path.extname(templateId) || '.hbs';
 

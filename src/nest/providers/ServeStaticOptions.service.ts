@@ -10,7 +10,7 @@ import { Environment } from 'src/constants/env';
 const defaultStaticModuleOptionsList: ServeStaticModuleOptions[] = [
   {
     serveRoot: '/swagger',
-    rootPath: path.join(__dirname, '../../', 'swagger/assets'),
+    rootPath: path.join(__dirname, '../../', 'assets/swagger'),
     exclude: ['/api/*', '/graphql'],
   },
 ];

@@ -1,11 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { $Enums, Prisma, User } from '@prisma/client';
+import { TransactionBaseService } from 'src/nest/shared/transaction-base.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PrismaClientTransaction } from 'src/types/common';
 
 @Injectable()
-export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+export class UserService extends TransactionBaseService {
+  constructor(protected readonly prisma: PrismaService) {
+    super(prisma);
+  }
+
+  async findUser(
+    id: number,
+    args: Omit<Prisma.UserFindUniqueArgs, 'where'> = {},
+    tx?: PrismaClientTransaction,
+  ) {
+    const prismaInstance = tx ?? this.prisma;
+    return prismaInstance.user.findUnique({ where: { id }, ...args });
+  }
 
   async findUserByEmail(email: string, tx?: PrismaClientTransaction) {
     const prismaInstance = tx ?? this.prisma;
@@ -29,5 +41,19 @@ export class UserService {
     });
 
     return user;
+  }
+
+  async activateUser(userId: number, tx?: PrismaClientTransaction) {
+    const prismaInstance = tx ?? this.prisma;
+
+    // temp update user status to active
+    await prismaInstance.user.update({
+      where: { id: userId },
+      data: { status: $Enums.UserStatus.ACTIVE },
+    });
+  }
+
+  isUserActive(user: User) {
+    return user?.status === $Enums.UserStatus.ACTIVE;
   }
 }

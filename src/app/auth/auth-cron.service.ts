@@ -20,15 +20,17 @@ export class AuthCronService {
       `========Cron job runs to remove expired access and refresh tokens========`,
     );
 
-    const [accessTokenKeys, refreshTokenKeys] = await Promise.all([
-      this.redis.keys(authOptions.tokens.whiteListAccessTokenPrefix + '*'),
-      this.redis.keys(authOptions.tokens.whiteListRefreshTokenPrefix + '*'),
-    ]);
+    const [[, accessTokenKeys = []], [, refreshTokenKeys = []]] =
+      await this.redis
+        .pipeline()
+        .keys(authOptions.tokens.whiteListAccessTokenPrefix + '*')
+        .keys(authOptions.tokens.whiteListRefreshTokenPrefix + '*')
+        .exec();
 
-    const accessIds = accessTokenKeys.map((key) =>
+    const accessIds = (accessTokenKeys as string[]).map((key) =>
       key.replaceAll(authOptions.tokens.whiteListAccessTokenPrefix, ''),
     );
-    const refreshIds = refreshTokenKeys.map((key) =>
+    const refreshIds = (refreshTokenKeys as string[]).map((key) =>
       key.replaceAll(authOptions.tokens.whiteListRefreshTokenPrefix, ''),
     );
 
