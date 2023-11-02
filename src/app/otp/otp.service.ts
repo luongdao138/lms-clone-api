@@ -131,20 +131,20 @@ export class OtpService {
   async verifyOtpToken(
     token: string,
     tx?: PrismaClientTransaction,
-  ): Promise<boolean> {
+  ): Promise<Otp | null> {
     try {
       await this.jwtService.verifyAsync<OtpPayload>(token, {
         secret: this.configService.getOrThrow(Environment.OTP_SECRET),
       });
     } catch (error) {
-      return false;
+      return null;
     }
 
     const activeOtp = await this.getActiveOtp(
       { otpToken: token },
-      { select: { id: true } },
+      { select: { id: true, userId: true, otpToken: true } },
       tx,
     );
-    return !!activeOtp;
+    return activeOtp;
   }
 }

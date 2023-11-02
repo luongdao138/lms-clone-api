@@ -12,4 +12,5 @@ export const authOptions = {
 
 export enum USER_EVENT {
   SIGNUP = 'signup',
+  RESEND_OTP = 'resend-otp',
 }

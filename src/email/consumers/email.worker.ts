@@ -14,6 +14,9 @@ export class EmailWorker {
       case USER_EVENT.SIGNUP:
         await this.handleUserSignup(data);
         break;
+      case USER_EVENT.RESEND_OTP:
+        await this.handleUserResendOtp(data);
+        break;
       default:
         break;
     }
@@ -28,6 +31,19 @@ export class EmailWorker {
       context: {
         otp: otp.otp,
         email: user.email,
+        expiresIn: TimeUtil.diff(otp.createdAt, otp.expiresAt, 'minute'),
+      },
+    });
+  }
+
+  private async handleUserResendOtp(data: { user: User; otp: Otp }) {
+    const { otp } = data;
+    await this.emailService.send({
+      to: data.user.email,
+      subject: `Resend otp`,
+      template: EMAIL_TEMPLATE.USER_RESEND_OTP,
+      context: {
+        otp: otp.otp,
         expiresIn: TimeUtil.diff(otp.createdAt, otp.expiresAt, 'minute'),
       },
     });

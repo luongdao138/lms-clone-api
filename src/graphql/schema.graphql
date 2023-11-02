@@ -67,6 +67,7 @@ input LoginInput {
 type Mutation {
   login(data: LoginInput!): GqlAuth!
   refresh: GqlAuth!
+  resendOtp(data: CheckOtpTokenInput!): GqlSignup!
   signout(refreshToken: String!): String!
   signup(data: SignUpInput!): GqlSignup!
 }

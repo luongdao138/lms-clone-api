@@ -2,7 +2,7 @@ import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { $Enums, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { Redis } from 'ioredis';
 import { pick } from 'lodash';
 import { Environment } from 'src/constants/env';
@@ -10,6 +10,7 @@ import { ModuleName } from 'src/constants/module-names';
 import { GraphQLException } from 'src/graphql/errors/GraphQLError';
 import { ApolloServerErrorCode } from 'src/graphql/errors/error-codes';
 import { RateLimitingService } from 'src/nest/shared/rate-limit/rate-limiting.service';
+import { TransactionBaseService } from 'src/nest/shared/transaction-base.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RabbitMqService } from 'src/rabbitmq/rabbitmq.service';
 import { generateRoutingKey } from 'src/rabbitmq/rabbitmq.util';
@@ -25,25 +26,28 @@ import { GqlAuth } from './dto/Auth.gql';
 import { LoginInput } from './dto/Login.input';
 import { SignUpInput } from './dto/Signup.input';
 import { VerifyOtpInput } from './dto/VerifyOtp.input';
+import { UserResendOtpEvent } from './events/UserResendOtp.event';
 import { UserSignupEvent } from './events/UserSignup.event';
 
 @Injectable()
-export class AuthService {
+export class AuthService extends TransactionBaseService {
   constructor(
     private readonly configService: ConfigService,
     private jwtService: JwtService,
     private readonly passwordService: PasswordService,
     private readonly userService: UserService,
-    private prisma: PrismaService,
+    protected readonly prisma: PrismaService,
     @InjectRedis() private readonly redis: Redis,
     private readonly userProfileService: UserProfileService,
     private readonly rabbitMQService: RabbitMqService,
     private readonly otpService: OtpService,
     private readonly rateLimitingService: RateLimitingService,
-  ) {}
+  ) {
+    super(prisma);
+  }
 
   async signup(payload: SignUpInput) {
-    return await this.prisma.$transaction(async (tx) => {
+    return await this.withTransaction()(async (tx) => {
       const { email } = payload;
       const existingUser = await this.userService.findUserByEmail(email, tx);
 
@@ -60,32 +64,7 @@ export class AuthService {
         user = await this.signupNewUser(payload, tx);
       }
 
-      // check rate limit
-      const exceedRateLimit = await this.rateLimitingService.bucket(
-        this.getOtpRateLimitKey(user.id),
-        { accessLimit: 20, timeUnit: TimeUnit.HOUR }, // 20 otps per hours
-      );
-      if (exceedRateLimit) {
-        throw new GraphQLException(
-          'Too many otp requests. Try again later',
-          ApolloServerErrorCode.TOO_MANY_REQUESTS,
-        );
-      }
-
-      const activeOtp = await this.otpService.getActiveOtp(
-        { userId: user.id },
-        {},
-        tx,
-      );
-
-      // remove current active otp
-      if (activeOtp) {
-        await this.otpService.deleteOtp({ where: { id: activeOtp.id } }, tx);
-      }
-      const { otp, rawOtp } = await this.otpService.createOtp(
-        { userId: user.id, expiresIn: authOptions.tokens.otpExpiresIn },
-        tx,
-      );
+      const { otp, rawOtp } = await this.renewOtp(user.id, tx);
 
       // get the raw otp to send email
       otp.otp = rawOtp;
@@ -122,8 +101,11 @@ export class AuthService {
     return this.prepareAuthTokens(existingUser);
   }
 
-  async verifyOtp(payload: VerifyOtpInput): Promise<User | undefined> {
-    return this.prisma.$transaction(async (tx) => {
+  async verifyOtp(
+    payload: VerifyOtpInput,
+    tx?: PrismaClientTransaction,
+  ): Promise<User | undefined> {
+    return this.withTransaction(tx)(async (tx) => {
       const { token, otp } = payload;
 
       const { success, otp: activeOtp } = await this.otpService.verifyOtp(
@@ -146,45 +128,97 @@ export class AuthService {
     });
   }
 
-  async signupNewUser(payload: SignUpInput, tx?: PrismaClientTransaction) {
-    const wrapper = tx
-      ? async (callback: (prisma: PrismaClientTransaction) => Promise<User>) =>
-          await callback(tx)
-      : async (callback: (prisma: PrismaClientTransaction) => Promise<User>) =>
-          await this.prisma.$transaction(
-            async (transaction) => await callback(transaction),
-          );
+  async renewOtp(userId: number, tx?: PrismaClientTransaction) {
+    return this.withTransaction(tx)(async (prismaIntance) => {
+      const exceedRateLimit = await this.rateLimitingService.bucket(
+        this.getOtpRateLimitKey(userId),
+        { accessLimit: 20, timeUnit: TimeUnit.HOUR }, // 20 otps per hours
+      );
+      if (exceedRateLimit) {
+        throw new GraphQLException(
+          'Too many otp requests. Try again later',
+          ApolloServerErrorCode.TOO_MANY_REQUESTS,
+        );
+      }
 
-    return await wrapper(async (prismaInstance: PrismaClientTransaction) => {
-      const { email, password, ...rest } = payload;
-
-      const hashedPassword = await this.passwordService.hash(password);
-
-      // create new empty profile for user
-      const userProfile = await this.userProfileService.createProfile(
-        {
-          data: {},
-          select: {
-            id: true,
-          },
-        },
-        prismaInstance,
+      const activeOtp = await this.otpService.getActiveOtp(
+        { userId },
+        {},
+        prismaIntance,
       );
 
-      const user = await this.userService.createUser(
-        {
-          data: {
-            email,
-            password: hashedPassword,
-            profileId: userProfile.id,
-            ...rest,
-          },
-        },
-        prismaInstance,
+      // remove current active otp
+      if (activeOtp) {
+        await this.otpService.deleteOtp(
+          { where: { id: activeOtp.id } },
+          prismaIntance,
+        );
+      }
+      const { otp, rawOtp } = await this.otpService.createOtp(
+        { userId: userId, expiresIn: authOptions.tokens.otpExpiresIn },
+        prismaIntance,
       );
 
-      return user;
+      return { otp, rawOtp };
     });
+  }
+
+  async resendOtp(token: string) {
+    const activeToken = await this.otpService.verifyOtpToken(token);
+
+    if (!activeToken) {
+      throw new GraphQLException(
+        'Token is invalid',
+        ApolloServerErrorCode.BAD_REQUEST,
+      );
+    }
+
+    const { userId } = activeToken;
+
+    const { otp, rawOtp } = await this.renewOtp(userId);
+    const user = await this.userService.findUser(userId);
+
+    await this.rabbitMQService.publish(
+      generateRoutingKey(ModuleName.USER, USER_EVENT.RESEND_OTP),
+      new UserResendOtpEvent(user, { ...otp, otp: rawOtp }),
+    );
+
+    return { token: otp.otpToken };
+  }
+
+  async signupNewUser(payload: SignUpInput, tx?: PrismaClientTransaction) {
+    return await this.withTransaction(tx)(
+      async (prismaInstance: PrismaClientTransaction) => {
+        const { email, password, ...rest } = payload;
+
+        const hashedPassword = await this.passwordService.hash(password);
+
+        // create new empty profile for user
+        const userProfile = await this.userProfileService.createProfile(
+          {
+            data: {},
+            select: {
+              id: true,
+            },
+          },
+          prismaInstance,
+        );
+
+        const user = await this.userService.createUser(
+          {
+            data: {
+              email,
+              password: hashedPassword,
+              profileId: userProfile.id,
+              ...rest,
+            },
+          },
+          prismaInstance,
+        );
+
+        return user;
+      },
+    );
   }
 
   getOtpRateLimitKey(userId: number) {

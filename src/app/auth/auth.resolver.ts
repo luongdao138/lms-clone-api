@@ -58,10 +58,19 @@ export class AuthResolver {
   @Public()
   @Query(() => GqlResult)
   async checkOtpToken(@Args() args: CheckOtpTokenArgs) {
-    const isTokenValid = await this.otpService.verifyOtpToken(args.data.token);
+    const activeToken = await this.otpService.verifyOtpToken(args.data.token);
 
     return {
-      success: isTokenValid,
+      success: !!activeToken,
+    };
+  }
+
+  @Public()
+  @Mutation(() => GqlSignup)
+  async resendOtp(@Args() args: CheckOtpTokenArgs) {
+    const { token } = await this.authService.resendOtp(args.data.token);
+    return {
+      token,
     };
   }
 
